@@ -1,0 +1,1225 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+<title>Maze Runner - 미로 게임 [DEV]</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Orbitron:wght@400;700;900&display=swap');
+
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; }
+
+:root {
+  --primary: #00e5ff;
+  --primary-dark: #00b8d4;
+  --accent: #ff6b35;
+  --accent-glow: #ff8a5c;
+  --bg-dark: #0a0e1a;
+  --bg-card: #111827;
+  --bg-card-hover: #1a2332;
+  --text-main: #e8eaed;
+  --text-dim: #8892a4;
+  --success: #00e676;
+  --warning: #ffab00;
+}
+
+html, body { width: 100%; height: 100%; overflow: hidden; background: var(--bg-dark); font-family: 'Noto Sans KR', sans-serif; color: var(--text-main); }
+canvas { display: block; }
+
+/* ===== LOADING ===== */
+#loading-screen { position: fixed; inset: 0; z-index: 1000; background: var(--bg-dark); display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.5s; }
+#loading-screen.fade-out { opacity: 0; pointer-events: none; }
+.loading-logo { font-family: 'Orbitron', sans-serif; font-size: 36px; font-weight: 900; background: linear-gradient(135deg, var(--primary), var(--accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 40px; letter-spacing: 4px; }
+.loading-bar-container { width: 240px; height: 4px; background: rgba(255,255,255,0.08); border-radius: 2px; overflow: hidden; }
+.loading-bar { width: 0%; height: 100%; background: linear-gradient(90deg, var(--primary), var(--accent)); border-radius: 2px; transition: width 0.3s; }
+.loading-text { margin-top: 16px; font-size: 12px; color: var(--text-dim); letter-spacing: 2px; }
+
+/* ===== LOBBY ===== */
+#lobby-screen { position: fixed; inset: 0; z-index: 900; background: var(--bg-dark); display: none; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; }
+.lobby-bg-grid { position: absolute; inset: 0; background-image: linear-gradient(rgba(0,229,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,229,255,0.03) 1px, transparent 1px); background-size: 40px 40px; animation: gridScroll 20s linear infinite; }
+@keyframes gridScroll { 0% { transform: translate(0,0); } 100% { transform: translate(40px,40px); } }
+.lobby-content { position: relative; z-index: 1; text-align: center; }
+.lobby-title { font-family: 'Orbitron', sans-serif; font-size: 42px; font-weight: 900; background: linear-gradient(135deg, var(--primary) 0%, #7c4dff 50%, var(--accent) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; letter-spacing: 3px; margin-bottom: 8px; }
+.lobby-subtitle { font-size: 13px; color: var(--text-dim); letter-spacing: 6px; margin-bottom: 60px; }
+.lobby-btn { display: block; width: 220px; margin: 0 auto 16px; padding: 16px 0; border: none; border-radius: 12px; font-family: 'Noto Sans KR', sans-serif; font-size: 16px; font-weight: 700; cursor: pointer; letter-spacing: 2px; transition: all 0.2s; position: relative; overflow: hidden; }
+.lobby-btn:active { transform: scale(0.97); }
+.btn-start { background: linear-gradient(135deg, var(--primary-dark), var(--primary)); color: var(--bg-dark); box-shadow: 0 4px 20px rgba(0,229,255,0.3); }
+.btn-settings { background: var(--bg-card); color: var(--text-main); border: 1px solid rgba(255,255,255,0.08); }
+
+/* ===== SETTINGS ===== */
+#settings-modal { position: fixed; inset: 0; z-index: 950; background: rgba(0,0,0,0.7); backdrop-filter: blur(8px); display: none; align-items: center; justify-content: center; }
+.settings-panel { background: var(--bg-card); border: 1px solid rgba(255,255,255,0.06); border-radius: 20px; width: 340px; max-height: 85vh; padding: 28px 24px; overflow-y: auto; }
+.settings-title { font-family: 'Orbitron', sans-serif; font-size: 18px; font-weight: 700; color: var(--primary); margin-bottom: 24px; text-align: center; letter-spacing: 2px; }
+.settings-section { margin-bottom: 22px; }
+.settings-label { font-size: 13px; font-weight: 700; color: var(--text-dim); margin-bottom: 10px; letter-spacing: 1px; }
+.settings-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.settings-row-label { font-size: 14px; color: var(--text-main); }
+.toggle { width: 48px; height: 26px; background: rgba(255,255,255,0.1); border-radius: 13px; cursor: pointer; position: relative; transition: background 0.2s; }
+.toggle.active { background: var(--primary-dark); }
+.toggle::after { content: ''; position: absolute; width: 22px; height: 22px; background: white; border-radius: 50%; top: 2px; left: 2px; transition: transform 0.2s; }
+.toggle.active::after { transform: translateX(22px); }
+.radio-group { display: flex; gap: 8px; flex-wrap: wrap; }
+.radio-option { flex: 1; min-width: 80px; padding: 10px 8px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; text-align: center; font-size: 11px; color: var(--text-dim); cursor: pointer; transition: all 0.2s; line-height: 1.4; }
+.radio-option.active { background: rgba(0,229,255,0.1); border-color: var(--primary); color: var(--primary); }
+.speed-group { display: flex; gap: 8px; }
+.speed-btn { flex: 1; padding: 10px 0; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; text-align: center; font-size: 14px; font-weight: 700; color: var(--text-dim); cursor: pointer; transition: all 0.2s; }
+.speed-btn.active { background: rgba(0,229,255,0.1); border-color: var(--primary); color: var(--primary); }
+.settings-close { display: block; width: 100%; padding: 14px 0; margin-top: 8px; background: var(--primary-dark); color: var(--bg-dark); border: none; border-radius: 12px; font-family: 'Noto Sans KR', sans-serif; font-size: 15px; font-weight: 700; cursor: pointer; letter-spacing: 1px; }
+
+/* ===== STAGE SELECT ===== */
+#stage-screen { position: fixed; inset: 0; z-index: 800; background: var(--bg-dark); display: none; flex-direction: column; }
+.stage-header { padding: 20px 24px 12px; display: flex; align-items: center; justify-content: space-between; }
+.stage-back { width: 40px; height: 40px; background: var(--bg-card); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-main); font-size: 18px; }
+.stage-title-text { font-family: 'Orbitron', sans-serif; font-size: 18px; font-weight: 700; color: var(--primary); letter-spacing: 2px; }
+.stage-currency { display: flex; align-items: center; gap: 6px; background: var(--bg-card); border: 1px solid rgba(255,255,255,0.06); border-radius: 20px; padding: 6px 14px; font-size: 14px; font-weight: 700; }
+.currency-icon { color: var(--warning); font-size: 16px; }
+.stage-grid-container { flex: 1; padding: 16px 20px; overflow-y: auto; }
+.stage-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.stage-cell { aspect-ratio: 1; background: var(--bg-card); border: 1px solid rgba(255,255,255,0.06); border-radius: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; position: relative; }
+.stage-cell:active { transform: scale(0.96); }
+.stage-cell.unlocked { border-color: rgba(0,229,255,0.2); }
+.stage-cell.unlocked:hover { background: var(--bg-card-hover); border-color: var(--primary); }
+.stage-cell.cleared { border-color: rgba(0,230,118,0.3); }
+.stage-cell.locked { opacity: 0.35; cursor: not-allowed; }
+.stage-cell.has-save { border-color: rgba(255,171,0,0.4); }
+.stage-num { font-family: 'Orbitron', sans-serif; font-size: 24px; font-weight: 900; color: var(--text-main); }
+.stage-cell.cleared .stage-num { color: var(--success); }
+.stage-cell.locked .stage-num { color: var(--text-dim); }
+.stage-status { font-size: 10px; margin-top: 2px; color: var(--text-dim); letter-spacing: 1px; }
+.stage-cell.cleared .stage-status { color: var(--success); }
+.stage-star { position: absolute; top: 8px; right: 10px; font-size: 14px; }
+.stage-time { font-size: 9px; color: var(--text-dim); margin-top: 1px; font-family: 'Orbitron', sans-serif; }
+.stage-save-badge { position: absolute; top: 8px; left: 8px; font-size: 9px; color: var(--warning); background: rgba(255,171,0,0.15); padding: 2px 6px; border-radius: 6px; letter-spacing: 0.5px; }
+
+/* Pagination */
+.stage-pagination { display: flex; align-items: center; justify-content: center; gap: 20px; padding: 12px 0 20px; }
+.page-btn { width: 40px; height: 40px; background: var(--bg-card); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: var(--text-main); font-size: 18px; cursor: pointer; transition: all 0.2s; }
+.page-btn:active { transform: scale(0.92); }
+.page-btn.disabled { opacity: 0.25; pointer-events: none; }
+.page-indicator { font-family: 'Orbitron', sans-serif; font-size: 14px; font-weight: 700; color: var(--primary); letter-spacing: 1px; }
+.stage-size-label { font-size: 9px; color: var(--text-dim); margin-top: 2px; letter-spacing: 0.5px; }
+
+/* ===== IN-GAME ===== */
+#game-screen { position: fixed; inset: 0; z-index: 700; background: var(--bg-dark); display: none; flex-direction: column; }
+.game-hud { position: absolute; top: 0; left: 0; right: 0; padding: 12px 16px; display: flex; justify-content: space-between; align-items: flex-start; z-index: 10; pointer-events: none; }
+.game-hud > * { pointer-events: auto; }
+.hud-left { display: flex; gap: 8px; align-items: center; }
+.hud-btn { width: 36px; height: 36px; background: rgba(17,24,39,0.85); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: var(--text-main); font-size: 16px; cursor: pointer; }
+.hud-stage-label { background: rgba(17,24,39,0.85); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 6px 14px; font-family: 'Orbitron', sans-serif; font-size: 13px; font-weight: 700; color: var(--primary); letter-spacing: 1px; }
+.hud-timer { background: rgba(17,24,39,0.85); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 6px 12px; font-family: 'Orbitron', sans-serif; font-size: 12px; font-weight: 700; color: var(--warning); letter-spacing: 1px; }
+.hud-right { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+.minimap-container { width: 100px; height: 100px; background: rgba(17,24,39,0.9); border: 1px solid rgba(0,229,255,0.2); border-radius: 12px; overflow: hidden; cursor: pointer; position: relative; transition: all 0.3s; }
+.minimap-container.hidden { display: none; }
+.minimap-canvas { width: 100%; height: 100%; }
+.minimap-cost { position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.7); text-align: center; font-size: 9px; color: var(--warning); padding: 2px 0; letter-spacing: 1px; }
+.minimap-cost.paid { color: var(--success); }
+
+/* Joystick */
+.joystick-area { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); width: 140px; height: 140px; z-index: 10; }
+.joystick-base { width: 140px; height: 140px; background: rgba(255,255,255,0.05); border: 2px solid rgba(255,255,255,0.1); border-radius: 50%; position: relative; }
+.joystick-stick { width: 56px; height: 56px; background: radial-gradient(circle, rgba(0,229,255,0.4), rgba(0,229,255,0.15)); border: 2px solid rgba(0,229,255,0.5); border-radius: 50%; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); }
+
+/* Modals */
+#minimap-fullscreen { position: fixed; inset: 0; z-index: 750; background: rgba(0,0,0,0.85); backdrop-filter: blur(4px); display: none; align-items: center; justify-content: center; flex-direction: column; }
+#minimap-fullscreen canvas { max-width: 90vw; max-height: 70vh; border: 1px solid rgba(0,229,255,0.2); border-radius: 12px; }
+.minimap-full-close { margin-top: 20px; padding: 12px 40px; background: var(--primary-dark); color: var(--bg-dark); border: none; border-radius: 10px; font-family: 'Noto Sans KR', sans-serif; font-size: 14px; font-weight: 700; cursor: pointer; }
+.minimap-full-currency { margin-top: 10px; font-size: 13px; color: var(--warning); }
+.minimap-full-btns { display: flex; gap: 12px; margin-top: 16px; }
+.minimap-full-btns button { padding: 12px 28px; border: none; border-radius: 10px; font-family: 'Noto Sans KR', sans-serif; font-size: 13px; font-weight: 700; cursor: pointer; }
+.btn-show-answer { background: #e040fb; color: white; }
+.btn-show-answer:disabled { opacity: 0.4; cursor: not-allowed; }
+
+#clear-modal { position: fixed; inset: 0; z-index: 760; background: rgba(0,0,0,0.75); backdrop-filter: blur(6px); display: none; align-items: center; justify-content: center; }
+.clear-panel { background: var(--bg-card); border: 1px solid rgba(0,230,118,0.2); border-radius: 24px; padding: 36px 32px; text-align: center; width: 300px; }
+.clear-title { font-family: 'Orbitron', sans-serif; font-size: 28px; font-weight: 900; color: var(--success); margin-bottom: 8px; }
+.clear-subtitle { font-size: 14px; color: var(--text-dim); margin-bottom: 6px; }
+.clear-time { font-family: 'Orbitron', sans-serif; font-size: 16px; color: var(--warning); margin-bottom: 20px; }
+.clear-btn { display: block; width: 100%; padding: 14px 0; margin-bottom: 10px; border: none; border-radius: 12px; font-family: 'Noto Sans KR', sans-serif; font-size: 15px; font-weight: 700; cursor: pointer; letter-spacing: 1px; }
+.clear-btn.next { background: var(--primary-dark); color: var(--bg-dark); }
+.clear-btn.back { background: var(--bg-card-hover); color: var(--text-main); border: 1px solid rgba(255,255,255,0.08); }
+
+#ad-modal { position: fixed; inset: 0; z-index: 770; background: rgba(0,0,0,0.8); backdrop-filter: blur(6px); display: none; align-items: center; justify-content: center; }
+.ad-panel { background: var(--bg-card); border: 1px solid rgba(255,171,0,0.2); border-radius: 24px; padding: 32px 28px; text-align: center; width: 300px; }
+.ad-title { font-size: 18px; font-weight: 700; color: var(--warning); margin-bottom: 12px; }
+.ad-desc { font-size: 13px; color: var(--text-dim); margin-bottom: 20px; line-height: 1.6; }
+.ad-btn { display: block; width: 100%; padding: 14px 0; margin-bottom: 10px; border: none; border-radius: 12px; font-family: 'Noto Sans KR', sans-serif; font-size: 14px; font-weight: 700; cursor: pointer; }
+.ad-btn.watch { background: var(--warning); color: var(--bg-dark); }
+.ad-btn.cancel { background: var(--bg-card-hover); color: var(--text-dim); border: 1px solid rgba(255,255,255,0.08); }
+
+/* Pause menu */
+#pause-modal { position: fixed; inset: 0; z-index: 755; background: rgba(0,0,0,0.7); backdrop-filter: blur(6px); display: none; align-items: center; justify-content: center; }
+.pause-panel { background: var(--bg-card); border: 1px solid rgba(255,255,255,0.08); border-radius: 24px; padding: 32px 28px; text-align: center; width: 280px; }
+.pause-title { font-family: 'Orbitron', sans-serif; font-size: 20px; font-weight: 700; color: var(--primary); margin-bottom: 20px; }
+.pause-btn { display: block; width: 100%; padding: 13px 0; margin-bottom: 10px; border: none; border-radius: 12px; font-family: 'Noto Sans KR', sans-serif; font-size: 14px; font-weight: 700; cursor: pointer; }
+.pause-btn.resume { background: var(--primary-dark); color: var(--bg-dark); }
+.pause-btn.save-exit { background: var(--warning); color: var(--bg-dark); }
+.pause-btn.quit { background: var(--bg-card-hover); color: var(--text-dim); border: 1px solid rgba(255,255,255,0.08); }
+
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<!-- LOADING -->
+<div id="loading-screen">
+  <div class="loading-logo">MAZE</div>
+  <div class="loading-bar-container"><div class="loading-bar" id="loading-bar"></div></div>
+  <div class="loading-text">LOADING...</div>
+</div>
+
+<!-- LOBBY -->
+<div id="lobby-screen">
+  <div class="lobby-bg-grid"></div>
+  <div class="lobby-content">
+    <div class="lobby-title">MAZE</div>
+    <div class="lobby-subtitle">RUNNER</div>
+    <button class="lobby-btn btn-start" onclick="showStageSelect()">시 작</button>
+    <button class="lobby-btn btn-settings" onclick="showSettings()">설 정</button>
+  </div>
+</div>
+
+<!-- SETTINGS -->
+<div id="settings-modal">
+  <div class="settings-panel">
+    <div class="settings-title">SETTINGS</div>
+    <div class="settings-section">
+      <div class="settings-label">🔊 사운드</div>
+      <div class="settings-row">
+        <span class="settings-row-label">배경음악</span>
+        <div class="toggle active" id="toggle-bgm" onclick="toggleSetting(this)"></div>
+      </div>
+    </div>
+    <div class="settings-section">
+      <div class="settings-label">🎯 경로 표시 옵션</div>
+      <div class="radio-group" id="trail-options">
+        <div class="radio-option active" data-val="1" onclick="setTrailOption(1)">선 표시<br><small style="color:var(--text-dim)">기본</small></div>
+        <div class="radio-option" data-val="2" onclick="setTrailOption(2)">되돌아가면<br>선 제거</div>
+        <div class="radio-option" data-val="3" onclick="setTrailOption(3)">선 없음</div>
+      </div>
+    </div>
+    <div class="settings-section">
+      <div class="settings-label">⚡ 이동 속도</div>
+      <div class="speed-group" id="speed-options">
+        <div class="speed-btn active" data-val="1" onclick="setSpeed(1)">1×</div>
+        <div class="speed-btn" data-val="2" onclick="setSpeed(2)">2×</div>
+        <div class="speed-btn" data-val="3" onclick="setSpeed(3)">3×</div>
+      </div>
+    </div>
+    <div class="settings-section">
+      <div class="settings-row">
+        <span class="settings-row-label">🗺️ 미니맵 표시</span>
+        <div class="toggle active" id="toggle-minimap" onclick="toggleSetting(this)"></div>
+      </div>
+    </div>
+    <button class="settings-close" onclick="hideSettings()">닫 기</button>
+  </div>
+</div>
+
+<!-- STAGE SELECT -->
+<div id="stage-screen">
+  <div class="stage-header">
+    <div class="stage-back" onclick="showLobby()">◂</div>
+    <div class="stage-title-text">STAGE</div>
+    <div class="stage-currency"><span class="currency-icon">◆</span><span id="currency-display">100</span></div>
+  </div>
+  <div id="dev-badge" style="text-align:center;padding:4px 0;font-size:11px;color:#ff6b35;letter-spacing:2px;font-family:Orbitron,sans-serif;">⚠ DEV MODE — ALL UNLOCKED</div>
+  <div class="stage-grid-container">
+    <div class="stage-grid" id="stage-grid"></div>
+  </div>
+  <div class="stage-pagination">
+    <div class="page-btn" id="page-prev" onclick="changeStgPage(-1)">◂</div>
+    <div class="page-indicator" id="page-indicator">1 / 3</div>
+    <div class="page-btn" id="page-next" onclick="changeStgPage(1)">▸</div>
+  </div>
+</div>
+
+<!-- IN-GAME -->
+<div id="game-screen">
+  <canvas id="game-canvas"></canvas>
+  <div class="game-hud">
+    <div class="hud-left">
+      <div class="hud-btn" onclick="pauseGame()">❚❚</div>
+      <div class="hud-stage-label" id="hud-stage-label">STAGE 1</div>
+      <div class="hud-timer" id="hud-timer">00:00</div>
+    </div>
+    <div class="hud-right">
+      <div class="minimap-container" id="minimap-container" onclick="openMinimapFull()">
+        <canvas class="minimap-canvas" id="minimap-canvas"></canvas>
+        <div class="minimap-cost" id="minimap-cost">◆ 5</div>
+      </div>
+    </div>
+  </div>
+  <div class="joystick-area" id="joystick-area">
+    <div class="joystick-base" id="joystick-base">
+      <div class="joystick-stick" id="joystick-stick"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Minimap Fullscreen -->
+<div id="minimap-fullscreen">
+  <canvas id="minimap-full-canvas"></canvas>
+  <div class="minimap-full-btns">
+    <button class="minimap-full-close" onclick="closeMinimapFull()">닫기</button>
+    <button class="btn-show-answer" id="btn-show-answer" onclick="showAnswer()">정답 보기</button>
+  </div>
+  <div class="minimap-full-currency" id="minimap-full-currency"></div>
+</div>
+
+<!-- Pause Modal -->
+<div id="pause-modal">
+  <div class="pause-panel">
+    <div class="pause-title">PAUSE</div>
+    <button class="pause-btn resume" onclick="resumeGame()">계속하기</button>
+    <button class="pause-btn save-exit" onclick="saveAndExit()">저장 후 나가기</button>
+    <button class="pause-btn quit" onclick="exitGame()">나가기</button>
+  </div>
+</div>
+
+<!-- Clear Modal -->
+<div id="clear-modal">
+  <div class="clear-panel">
+    <div class="clear-title">CLEAR!</div>
+    <div class="clear-subtitle" id="clear-subtitle">Stage 1 클리어</div>
+    <div class="clear-time" id="clear-time">00:00</div>
+    <button class="clear-btn next" id="clear-next-btn" onclick="nextStage()">다음 스테이지</button>
+    <button class="clear-btn back" onclick="exitGame()">스테이지 선택</button>
+  </div>
+</div>
+
+<!-- Ad Modal -->
+<div id="ad-modal">
+  <div class="ad-panel">
+    <div class="ad-title">◆ 재화 부족</div>
+    <div class="ad-desc" id="ad-desc">광고를 시청하면<br>미니맵 확대를 사용할 수 있습니다.</div>
+    <button class="ad-btn watch" id="ad-watch-btn" onclick="watchAd()">광고 시청</button>
+    <button class="ad-btn cancel" onclick="closeAdModal()">취소</button>
+  </div>
+</div>
+
+<script>
+// ========================================
+// GAME CONFIG
+// ========================================
+const DEV_MODE = true;
+
+const STATE = {
+  currency: DEV_MODE ? 9999 : 100,
+  settings: { bgm: true, trailOption: 1, speed: 1, minimap: true },
+  stages: [],
+  maxStages: 36,
+  currentStage: 0,
+  clearedStages: new Set(),
+  stagePage: 0,
+  stagesPerPage: 12,
+  stageRecords: {}, // stageIdx -> { bestTime }
+  savedGames: {},   // stageIdx -> { maze, player, trail, trailSet, playTime, minimapPaid, answerPaid }
+};
+
+for (let i = 0; i < STATE.maxStages; i++) {
+  STATE.stages.push({ unlocked: DEV_MODE ? true : (i === 0), cleared: false });
+}
+
+// ========================================
+// STAGE CONFIGS
+// ========================================
+function getStageConfig(idx) {
+  const configs = [
+    { cols:5,rows:5,cellSize:60,minimapCost:5,deadEndDepth:0,zoom:1 },
+    { cols:6,rows:6,cellSize:55,minimapCost:5,deadEndDepth:0,zoom:1 },
+    { cols:7,rows:7,cellSize:50,minimapCost:8,deadEndDepth:0,zoom:1 },
+    { cols:8,rows:8,cellSize:48,minimapCost:8,deadEndDepth:0,zoom:1 },
+    { cols:9,rows:9,cellSize:45,minimapCost:10,deadEndDepth:0,zoom:1 },
+    { cols:10,rows:10,cellSize:42,minimapCost:12,deadEndDepth:0,zoom:1 },
+    { cols:12,rows:12,cellSize:38,minimapCost:15,deadEndDepth:2,zoom:1 },
+    { cols:14,rows:14,cellSize:35,minimapCost:18,deadEndDepth:3,zoom:1 },
+    { cols:16,rows:16,cellSize:32,minimapCost:22,deadEndDepth:3,zoom:1 },
+    { cols:18,rows:18,cellSize:30,minimapCost:26,deadEndDepth:4,zoom:1.05 },
+    { cols:20,rows:20,cellSize:28,minimapCost:30,deadEndDepth:5,zoom:1.05 },
+    { cols:22,rows:22,cellSize:26,minimapCost:35,deadEndDepth:5,zoom:1.1 },
+    { cols:24,rows:24,cellSize:25,minimapCost:40,deadEndDepth:6,zoom:1.1 },
+    { cols:26,rows:26,cellSize:24,minimapCost:45,deadEndDepth:6,zoom:1.1 },
+    { cols:28,rows:28,cellSize:23,minimapCost:50,deadEndDepth:7,zoom:1.15 },
+    { cols:30,rows:30,cellSize:22,minimapCost:55,deadEndDepth:7,zoom:1.15 },
+    { cols:32,rows:32,cellSize:21,minimapCost:60,deadEndDepth:8,zoom:1.15 },
+    { cols:34,rows:34,cellSize:20,minimapCost:65,deadEndDepth:8,zoom:1.2 },
+    { cols:36,rows:36,cellSize:19,minimapCost:70,deadEndDepth:9,zoom:1.2 },
+    { cols:38,rows:38,cellSize:18,minimapCost:75,deadEndDepth:9,zoom:1.2 },
+    { cols:40,rows:40,cellSize:17,minimapCost:80,deadEndDepth:10,zoom:1.25 },
+    { cols:42,rows:42,cellSize:17,minimapCost:90,deadEndDepth:10,zoom:1.25 },
+    { cols:44,rows:44,cellSize:16,minimapCost:100,deadEndDepth:11,zoom:1.25 },
+    { cols:46,rows:46,cellSize:16,minimapCost:110,deadEndDepth:11,zoom:1.3 },
+    { cols:48,rows:48,cellSize:15,minimapCost:120,deadEndDepth:12,zoom:1.3 },
+    { cols:50,rows:50,cellSize:15,minimapCost:130,deadEndDepth:12,zoom:1.3 },
+    { cols:52,rows:52,cellSize:14,minimapCost:140,deadEndDepth:13,zoom:1.35 },
+    { cols:54,rows:54,cellSize:14,minimapCost:150,deadEndDepth:13,zoom:1.35 },
+    { cols:56,rows:56,cellSize:13,minimapCost:160,deadEndDepth:14,zoom:1.35 },
+    { cols:58,rows:58,cellSize:13,minimapCost:170,deadEndDepth:14,zoom:1.4 },
+    { cols:60,rows:60,cellSize:12,minimapCost:180,deadEndDepth:15,zoom:1.4 },
+    { cols:64,rows:64,cellSize:12,minimapCost:200,deadEndDepth:16,zoom:1.4 },
+    { cols:68,rows:68,cellSize:11,minimapCost:220,deadEndDepth:17,zoom:1.45 },
+    { cols:72,rows:72,cellSize:11,minimapCost:250,deadEndDepth:18,zoom:1.45 },
+    { cols:80,rows:80,cellSize:10,minimapCost:300,deadEndDepth:20,zoom:1.5 },
+    { cols:90,rows:90,cellSize:10,minimapCost:400,deadEndDepth:22,zoom:1.5 },
+  ];
+  return configs[Math.min(idx, configs.length - 1)];
+}
+
+// ========================================
+// MAZE GENERATOR (with dead-end branches for mid/late stages)
+// ========================================
+function generateMaze(cols, rows) {
+  const grid = [];
+  for (let y = 0; y < rows; y++) {
+    grid[y] = [];
+    for (let x = 0; x < cols; x++) {
+      grid[y][x] = { x, y, walls: { top:true, right:true, bottom:true, left:true }, visited: false };
+    }
+  }
+  const stack = [];
+  grid[0][0].visited = true;
+  stack.push(grid[0][0]);
+  while (stack.length > 0) {
+    const cur = stack[stack.length - 1];
+    const nb = getUnvisitedNeighbors(grid, cur.x, cur.y, cols, rows);
+    if (nb.length > 0) {
+      const next = nb[Math.floor(Math.random() * nb.length)];
+      removeWall(cur, next);
+      next.visited = true;
+      stack.push(next);
+    } else {
+      stack.pop();
+    }
+  }
+  return grid;
+}
+
+function getUnvisitedNeighbors(grid, x, y, cols, rows) {
+  const nb = [];
+  if (y > 0 && !grid[y-1][x].visited) nb.push(grid[y-1][x]);
+  if (x < cols-1 && !grid[y][x+1].visited) nb.push(grid[y][x+1]);
+  if (y < rows-1 && !grid[y+1][x].visited) nb.push(grid[y+1][x]);
+  if (x > 0 && !grid[y][x-1].visited) nb.push(grid[y][x-1]);
+  return nb;
+}
+
+function removeWall(a, b) {
+  if (b.y < a.y) { a.walls.top = false; b.walls.bottom = false; }
+  if (b.x > a.x) { a.walls.right = false; b.walls.left = false; }
+  if (b.y > a.y) { a.walls.bottom = false; b.walls.top = false; }
+  if (b.x < a.x) { a.walls.left = false; b.walls.right = false; }
+}
+
+// Add dead-end branches along the solution path for mid/late stages
+function addDeadEndBranches(grid, cols, rows, solutionPath, maxDepth) {
+  if (maxDepth <= 0) return;
+  const pathSet = new Set(solutionPath.map(p => `${p.x},${p.y}`));
+  // Sample points along solution to branch from
+  const branchCount = Math.min(Math.floor(solutionPath.length * 0.3), 30);
+  for (let b = 0; b < branchCount; b++) {
+    const idx = Math.floor(Math.random() * solutionPath.length);
+    const start = solutionPath[idx];
+    const depth = Math.floor(Math.random() * maxDepth) + 2;
+    // Try to carve a dead-end from an adjacent cell not on solution
+    const dirs = [{dx:0,dy:-1,w:'top',ow:'bottom'},{dx:1,dy:0,w:'right',ow:'left'},{dx:0,dy:1,w:'bottom',ow:'top'},{dx:-1,dy:0,w:'left',ow:'right'}];
+    const shuffled = dirs.sort(() => Math.random() - 0.5);
+    for (const d of shuffled) {
+      const nx = start.x + d.dx, ny = start.y + d.dy;
+      if (nx < 0 || nx >= cols || ny < 0 || ny >= rows) continue;
+      // Open wall if it's closed (creating a branch)
+      if (grid[start.y][start.x].walls[d.w]) {
+        // Check if the target cell is reachable (has connections) to avoid isolated pockets
+        grid[start.y][start.x].walls[d.w] = false;
+        grid[ny][nx].walls[d.ow] = false;
+        break;
+      }
+    }
+  }
+}
+
+// Solve maze with BFS to get solution path
+function solveMaze(grid, cols, rows) {
+  const visited = new Set();
+  const queue = [{ x: 0, y: 0, path: [{x:0,y:0}] }];
+  visited.add('0,0');
+  const dirs = [
+    { dx:0,dy:-1,w:'top' },{ dx:1,dy:0,w:'right' },
+    { dx:0,dy:1,w:'bottom' },{ dx:-1,dy:0,w:'left' }
+  ];
+  while (queue.length > 0) {
+    const { x, y, path } = queue.shift();
+    if (x === cols - 1 && y === rows - 1) return path;
+    for (const d of dirs) {
+      const nx = x + d.dx, ny = y + d.dy;
+      const key = `${nx},${ny}`;
+      if (nx >= 0 && nx < cols && ny >= 0 && ny < rows && !visited.has(key) && !grid[y][x].walls[d.w]) {
+        visited.add(key);
+        queue.push({ x: nx, y: ny, path: [...path, {x:nx,y:ny}] });
+      }
+    }
+  }
+  return [{x:0,y:0}]; // fallback
+}
+
+// ========================================
+// GAME ENGINE VARS
+// ========================================
+let maze = null;
+let solutionPath = null;
+let showSolution = false;
+let player = { x:0, y:0, pixelX:0, pixelY:0 };
+let trail = [];
+let trailSet = new Set();
+let gameCanvas, gameCtx, minimapCanvas, minimapCtx;
+let cellSize = 60;
+let mazeConfig = null;
+let gameRunning = false;
+let gamePaused = false;
+let cameraX = 0, cameraY = 0;
+let joystickActive = false, joystickDX = 0, joystickDY = 0;
+let playTime = 0; // seconds
+let playTimeInterval = null;
+let minimapPaidThisStage = false;
+let answerPaidThisStage = false;
+let adPurpose = 'minimap'; // 'minimap' or 'answer'
+
+// Smooth movement
+let isMoving = false;
+let moveFromX = 0, moveFromY = 0, moveToX = 0, moveToY = 0;
+let moveProgress = 0;
+
+// ========================================
+// LOADING
+// ========================================
+function startLoading() {
+  const bar = document.getElementById('loading-bar');
+  let progress = 0;
+  const iv = setInterval(() => {
+    progress += Math.random() * 15 + 5;
+    if (progress >= 100) { progress = 100; bar.style.width = '100%'; clearInterval(iv);
+      setTimeout(() => { document.getElementById('loading-screen').classList.add('fade-out');
+        setTimeout(() => { document.getElementById('loading-screen').style.display = 'none'; showLobby(); }, 500);
+      }, 400);
+    }
+    bar.style.width = progress + '%';
+  }, 200);
+}
+
+// ========================================
+// SCREEN MANAGEMENT
+// ========================================
+function hideAll() {
+  ['lobby-screen','settings-modal','stage-screen','game-screen','clear-modal','minimap-fullscreen','ad-modal','pause-modal'].forEach(id => {
+    document.getElementById(id).style.display = 'none';
+  });
+  stopTimer();
+  gameRunning = false;
+  gamePaused = false;
+}
+
+function showLobby() { hideAll(); document.getElementById('lobby-screen').style.display = 'flex'; }
+function showSettings() { document.getElementById('settings-modal').style.display = 'flex'; }
+function hideSettings() { document.getElementById('settings-modal').style.display = 'none'; }
+
+function showStageSelect() {
+  hideAll();
+  document.getElementById('stage-screen').style.display = 'flex';
+  renderStageGrid();
+  document.getElementById('currency-display').textContent = STATE.currency;
+}
+
+function formatTime(seconds) {
+  const m = Math.floor(seconds / 60);
+  const s = Math.floor(seconds % 60);
+  return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+}
+
+function startTimer() {
+  stopTimer();
+  playTimeInterval = setInterval(() => {
+    if (gameRunning && !gamePaused) {
+      playTime += 0.1;
+      document.getElementById('hud-timer').textContent = formatTime(playTime);
+    }
+  }, 100);
+}
+function stopTimer() { if (playTimeInterval) { clearInterval(playTimeInterval); playTimeInterval = null; } }
+
+// ========================================
+// STAGE GRID
+// ========================================
+function renderStageGrid() {
+  const grid = document.getElementById('stage-grid');
+  grid.innerHTML = '';
+  const page = STATE.stagePage;
+  const perPage = STATE.stagesPerPage;
+  const startIdx = page * perPage;
+  const endIdx = Math.min(startIdx + perPage, STATE.maxStages);
+
+  for (let i = startIdx; i < endIdx; i++) {
+    const s = STATE.stages[i];
+    const cfg = getStageConfig(i);
+    const hasSave = !!STATE.savedGames[i];
+    const record = STATE.stageRecords[i];
+    const cell = document.createElement('div');
+    cell.className = 'stage-cell';
+    if (s.cleared) cell.classList.add('cleared');
+    else if (s.unlocked) cell.classList.add('unlocked');
+    else cell.classList.add('locked');
+    if (hasSave) cell.classList.add('has-save');
+
+    cell.innerHTML = `
+      ${hasSave ? '<div class="stage-save-badge">SAVE</div>' : ''}
+      <div class="stage-num">${i + 1}</div>
+      <div class="stage-size-label">${cfg.cols}×${cfg.rows}</div>
+      <div class="stage-status">${s.cleared ? 'CLEAR' : hasSave ? 'CONTINUE' : s.unlocked ? 'PLAY' : 'LOCKED'}</div>
+      ${record ? `<div class="stage-time">${formatTime(record.bestTime)}</div>` : ''}
+      ${s.cleared ? '<div class="stage-star">⭐</div>' : ''}
+    `;
+
+    if (s.unlocked || s.cleared) {
+      cell.onclick = () => {
+        if (STATE.savedGames[i]) loadGame(i);
+        else startGame(i);
+      };
+    }
+    grid.appendChild(cell);
+  }
+
+  const totalPages = Math.ceil(STATE.maxStages / perPage);
+  document.getElementById('page-indicator').textContent = `${page + 1} / ${totalPages}`;
+  document.getElementById('page-prev').classList.toggle('disabled', page === 0);
+  document.getElementById('page-next').classList.toggle('disabled', page >= totalPages - 1);
+  document.getElementById('dev-badge').style.display = DEV_MODE ? 'block' : 'none';
+}
+
+function changeStgPage(delta) {
+  const totalPages = Math.ceil(STATE.maxStages / STATE.stagesPerPage);
+  const np = STATE.stagePage + delta;
+  if (np >= 0 && np < totalPages) { STATE.stagePage = np; renderStageGrid(); }
+}
+
+// ========================================
+// START GAME
+// ========================================
+function startGame(stageIdx) {
+  hideAll();
+  STATE.currentStage = stageIdx;
+  document.getElementById('game-screen').style.display = 'flex';
+
+  gameCanvas = document.getElementById('game-canvas');
+  gameCtx = gameCanvas.getContext('2d');
+  minimapCanvas = document.getElementById('minimap-canvas');
+  minimapCtx = minimapCanvas.getContext('2d');
+  resizeCanvas();
+
+  mazeConfig = getStageConfig(stageIdx);
+  cellSize = mazeConfig.cellSize;
+  maze = generateMaze(mazeConfig.cols, mazeConfig.rows);
+  solutionPath = solveMaze(maze, mazeConfig.cols, mazeConfig.rows);
+
+  // Add dead-end branches for mid/late stages
+  if (mazeConfig.deadEndDepth > 0) {
+    addDeadEndBranches(maze, mazeConfig.cols, mazeConfig.rows, solutionPath, mazeConfig.deadEndDepth);
+    // Re-solve after adding branches (path may have changed)
+    solutionPath = solveMaze(maze, mazeConfig.cols, mazeConfig.rows);
+  }
+
+  showSolution = false;
+  minimapPaidThisStage = false;
+  answerPaidThisStage = false;
+
+  player = { x:0, y:0, pixelX: cellSize/2, pixelY: cellSize/2 };
+  isMoving = false; moveProgress = 0;
+  trail = [{x:0,y:0}];
+  trailSet = new Set(); trailSet.add('0,0');
+  playTime = 0;
+  cameraX = player.pixelX - gameCanvas.width / 2;
+  cameraY = player.pixelY - gameCanvas.height * 0.45;
+
+  setupHUD();
+  gameRunning = true; gamePaused = false;
+  startTimer();
+  initJoystick();
+  lastTime = performance.now();
+  requestAnimationFrame(gameLoop);
+}
+
+// ========================================
+// LOAD (CONTINUE) GAME
+// ========================================
+function loadGame(stageIdx) {
+  const save = STATE.savedGames[stageIdx];
+  if (!save) return startGame(stageIdx);
+
+  hideAll();
+  STATE.currentStage = stageIdx;
+  document.getElementById('game-screen').style.display = 'flex';
+
+  gameCanvas = document.getElementById('game-canvas');
+  gameCtx = gameCanvas.getContext('2d');
+  minimapCanvas = document.getElementById('minimap-canvas');
+  minimapCtx = minimapCanvas.getContext('2d');
+  resizeCanvas();
+
+  mazeConfig = getStageConfig(stageIdx);
+  cellSize = mazeConfig.cellSize;
+  maze = save.maze;
+  solutionPath = solveMaze(maze, mazeConfig.cols, mazeConfig.rows);
+  showSolution = false;
+  minimapPaidThisStage = save.minimapPaid || false;
+  answerPaidThisStage = save.answerPaid || false;
+
+  player = { ...save.player, pixelX: save.player.x * cellSize + cellSize/2, pixelY: save.player.y * cellSize + cellSize/2 };
+  isMoving = false; moveProgress = 0;
+  trail = [...save.trail];
+  trailSet = new Set(save.trailSetArr);
+  playTime = save.playTime || 0;
+  cameraX = player.pixelX - gameCanvas.width / 2;
+  cameraY = player.pixelY - gameCanvas.height * 0.45;
+
+  delete STATE.savedGames[stageIdx];
+
+  setupHUD();
+  gameRunning = true; gamePaused = false;
+  startTimer();
+  initJoystick();
+  lastTime = performance.now();
+  requestAnimationFrame(gameLoop);
+}
+
+function setupHUD() {
+  document.getElementById('hud-stage-label').textContent = `STAGE ${STATE.currentStage + 1}`;
+  document.getElementById('hud-timer').textContent = formatTime(playTime);
+  const mc = document.getElementById('minimap-container');
+  mc.classList.toggle('hidden', !STATE.settings.minimap);
+  updateMinimapCostLabel();
+}
+
+function updateMinimapCostLabel() {
+  const costEl = document.getElementById('minimap-cost');
+  if (minimapPaidThisStage) {
+    costEl.textContent = '무료';
+    costEl.classList.add('paid');
+  } else {
+    costEl.textContent = `◆ ${mazeConfig.minimapCost}`;
+    costEl.classList.remove('paid');
+  }
+}
+
+function resizeCanvas() {
+  gameCanvas.width = window.innerWidth;
+  gameCanvas.height = window.innerHeight;
+  minimapCanvas.width = 100;
+  minimapCanvas.height = 100;
+}
+window.addEventListener('resize', () => { if (gameRunning) resizeCanvas(); });
+
+// ========================================
+// PAUSE / SAVE
+// ========================================
+function pauseGame() {
+  if (!gameRunning) return;
+  gamePaused = true;
+  document.getElementById('pause-modal').style.display = 'flex';
+}
+function resumeGame() {
+  gamePaused = false;
+  document.getElementById('pause-modal').style.display = 'none';
+}
+function saveAndExit() {
+  STATE.savedGames[STATE.currentStage] = {
+    maze: maze,
+    player: { x: player.x, y: player.y },
+    trail: [...trail],
+    trailSetArr: [...trailSet],
+    playTime: playTime,
+    minimapPaid: minimapPaidThisStage,
+    answerPaid: answerPaidThisStage,
+  };
+  exitGame();
+}
+function exitGame() {
+  gameRunning = false; gamePaused = false;
+  stopTimer();
+  document.getElementById('clear-modal').style.display = 'none';
+  document.getElementById('pause-modal').style.display = 'none';
+  showStageSelect();
+}
+
+// ========================================
+// JOYSTICK
+// ========================================
+let joystickInited = false;
+function initJoystick() {
+  if (joystickInited) return;
+  joystickInited = true;
+  const area = document.getElementById('joystick-area');
+  const base = document.getElementById('joystick-base');
+  const stick = document.getElementById('joystick-stick');
+  const maxDist = 42;
+
+  function handleMove(cx, cy) {
+    const rect = base.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    let dx = cx - centerX, dy = cy - centerY;
+    const dist = Math.sqrt(dx*dx + dy*dy);
+    if (dist > maxDist) { dx = (dx/dist)*maxDist; dy = (dy/dist)*maxDist; }
+    stick.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+    if (Math.min(dist/maxDist, 1) > 0.2) {
+      joystickDX = dx/maxDist; joystickDY = dy/maxDist; joystickActive = true;
+    } else { joystickDX = 0; joystickDY = 0; joystickActive = false; }
+  }
+  function handleEnd() { stick.style.transform = 'translate(-50%,-50%)'; joystickDX=0; joystickDY=0; joystickActive=false; }
+
+  area.addEventListener('touchstart', e => { e.preventDefault(); handleMove(e.touches[0].clientX, e.touches[0].clientY); }, {passive:false});
+  area.addEventListener('touchmove', e => { e.preventDefault(); handleMove(e.touches[0].clientX, e.touches[0].clientY); }, {passive:false});
+  area.addEventListener('touchend', handleEnd);
+  area.addEventListener('touchcancel', handleEnd);
+
+  let md = false;
+  area.addEventListener('mousedown', e => { md=true; handleMove(e.clientX,e.clientY); });
+  window.addEventListener('mousemove', e => { if(md) handleMove(e.clientX,e.clientY); });
+  window.addEventListener('mouseup', () => { md=false; handleEnd(); });
+}
+
+// ========================================
+// SMOOTH PLAYER MOVEMENT
+// ========================================
+function canMove(fx, fy, dir) {
+  if (!maze || !maze[fy] || !maze[fy][fx]) return false;
+  return !maze[fy][fx].walls[dir];
+}
+
+function getDirection(dx, dy) {
+  return Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : (dy > 0 ? 'bottom' : 'top');
+}
+
+function getDirOffset(dir) {
+  switch(dir) { case 'top': return {dx:0,dy:-1}; case 'bottom': return {dx:0,dy:1}; case 'left': return {dx:-1,dy:0}; case 'right': return {dx:1,dy:0}; }
+}
+
+const BASE_MOVE_SPEED = 6; // cells per second
+
+function updatePlayer(dt) {
+  if (gamePaused) return;
+  const dtSec = dt / 1000;
+  const speed = BASE_MOVE_SPEED * STATE.settings.speed;
+
+  if (isMoving) {
+    moveProgress += speed * dtSec;
+    if (moveProgress >= 1) {
+      moveProgress = 0;
+      isMoving = false;
+      player.x = moveToX;
+      player.y = moveToY;
+      player.pixelX = player.x * cellSize + cellSize / 2;
+      player.pixelY = player.y * cellSize + cellSize / 2;
+
+      // Trail logic on arrival
+      handleTrail(player.x, player.y);
+
+      // Check goal
+      if (player.x === mazeConfig.cols - 1 && player.y === mazeConfig.rows - 1) {
+        onStageClear();
+        return;
+      }
+    } else {
+      // Interpolate pixel position
+      const fx = moveFromX * cellSize + cellSize / 2;
+      const fy = moveFromY * cellSize + cellSize / 2;
+      const tx = moveToX * cellSize + cellSize / 2;
+      const ty = moveToY * cellSize + cellSize / 2;
+      // Ease out for smooth feel
+      const t = 1 - Math.pow(1 - moveProgress, 2);
+      player.pixelX = fx + (tx - fx) * t;
+      player.pixelY = fy + (ty - fy) * t;
+    }
+    return;
+  }
+
+  // Start new move
+  if (!joystickActive) return;
+
+  const dir = getDirection(joystickDX, joystickDY);
+  if (canMove(player.x, player.y, dir)) {
+    const off = getDirOffset(dir);
+    moveFromX = player.x; moveFromY = player.y;
+    moveToX = player.x + off.dx; moveToY = player.y + off.dy;
+    moveProgress = 0;
+    isMoving = true;
+  }
+}
+
+function handleTrail(nx, ny) {
+  const key = `${nx},${ny}`;
+  const opt = STATE.settings.trailOption;
+  if (opt === 1) {
+    if (!trailSet.has(key)) { trail.push({x:nx,y:ny}); trailSet.add(key); }
+  } else if (opt === 2) {
+    if (trail.length >= 2 && trail[trail.length-2].x === nx && trail[trail.length-2].y === ny) {
+      const rm = trail.pop(); trailSet.delete(`${rm.x},${rm.y}`);
+    } else { trail.push({x:nx,y:ny}); trailSet.add(key); }
+  }
+}
+
+// ========================================
+// CAMERA
+// ========================================
+function updateCamera() {
+  const zoom = mazeConfig.zoom || 1;
+  const targetCamX = player.pixelX * zoom - gameCanvas.width / 2;
+  const targetCamY = player.pixelY * zoom - gameCanvas.height * 0.42;
+  cameraX += (targetCamX - cameraX) * 0.12;
+  cameraY += (targetCamY - cameraY) * 0.12;
+}
+
+// ========================================
+// RENDERING
+// ========================================
+function drawGame() {
+  const ctx = gameCtx;
+  const w = gameCanvas.width, h = gameCanvas.height;
+  const cols = mazeConfig.cols, rows = mazeConfig.rows;
+  const zoom = mazeConfig.zoom || 1;
+
+  ctx.fillStyle = '#060a14';
+  ctx.fillRect(0, 0, w, h);
+
+  ctx.save();
+  ctx.scale(zoom, zoom);
+  ctx.translate(-cameraX / zoom, -cameraY / zoom);
+
+  // Path bg
+  ctx.fillStyle = '#0d1525';
+  ctx.fillRect(0, 0, cols * cellSize, rows * cellSize);
+
+  // Draw trail
+  if (STATE.settings.trailOption !== 3 && trail.length > 1) {
+    ctx.strokeStyle = 'rgba(0, 229, 255, 0.3)';
+    ctx.lineWidth = cellSize * 0.3;
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.beginPath();
+    ctx.moveTo(trail[0].x * cellSize + cellSize/2, trail[0].y * cellSize + cellSize/2);
+    for (let i = 1; i < trail.length; i++) {
+      ctx.lineTo(trail[i].x * cellSize + cellSize/2, trail[i].y * cellSize + cellSize/2);
+    }
+    ctx.stroke();
+  }
+
+  // Draw walls
+  ctx.strokeStyle = '#2a4a7c';
+  ctx.lineWidth = Math.max(2, cellSize * 0.06);
+  for (let y = 0; y < rows; y++) {
+    for (let x = 0; x < cols; x++) {
+      const cell = maze[y][x];
+      const px = x * cellSize, py = y * cellSize;
+      if (cell.walls.top) { ctx.beginPath(); ctx.moveTo(px,py); ctx.lineTo(px+cellSize,py); ctx.stroke(); }
+      if (cell.walls.right) { ctx.beginPath(); ctx.moveTo(px+cellSize,py); ctx.lineTo(px+cellSize,py+cellSize); ctx.stroke(); }
+      if (cell.walls.bottom) { ctx.beginPath(); ctx.moveTo(px,py+cellSize); ctx.lineTo(px+cellSize,py+cellSize); ctx.stroke(); }
+      if (cell.walls.left) { ctx.beginPath(); ctx.moveTo(px,py); ctx.lineTo(px,py+cellSize); ctx.stroke(); }
+    }
+  }
+
+  // Start & End (bigger for later stages)
+  const markerScale = STATE.currentStage >= 6 ? Math.min(1 + (STATE.currentStage - 6) * 0.08, 2.5) : 1;
+  const startSize = cellSize * markerScale;
+  const endSize = cellSize * markerScale;
+
+  ctx.fillStyle = 'rgba(0, 230, 118, 0.25)';
+  ctx.fillRect(-startSize*0.15, -startSize*0.15, startSize*1.3, startSize*1.3);
+  ctx.fillStyle = '#00e676';
+  ctx.font = `bold ${Math.max(startSize * 0.35, 12)}px Orbitron`;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('S', cellSize/2, cellSize/2);
+  // Pulsing ring for start
+  if (markerScale > 1) {
+    ctx.beginPath(); ctx.arc(cellSize/2, cellSize/2, startSize*0.55, 0, Math.PI*2);
+    ctx.strokeStyle = 'rgba(0,230,118,0.4)'; ctx.lineWidth = 2; ctx.stroke();
+  }
+
+  const ex = (cols-1)*cellSize, ey = (rows-1)*cellSize;
+  ctx.fillStyle = 'rgba(255, 23, 68, 0.2)';
+  ctx.fillRect(ex - endSize*0.15, ey - endSize*0.15, endSize*1.3, endSize*1.3);
+  ctx.fillStyle = '#ff1744';
+  ctx.font = `bold ${Math.max(endSize * 0.35, 12)}px Orbitron`;
+  ctx.fillText('G', ex + cellSize/2, ey + cellSize/2);
+  if (markerScale > 1) {
+    ctx.beginPath(); ctx.arc(ex+cellSize/2, ey+cellSize/2, endSize*0.55, 0, Math.PI*2);
+    ctx.strokeStyle = 'rgba(255,23,68,0.4)'; ctx.lineWidth = 2; ctx.stroke();
+  }
+
+  // Draw player
+  const ppx = player.pixelX, ppy = player.pixelY;
+  ctx.beginPath(); ctx.arc(ppx, ppy, cellSize*0.45, 0, Math.PI*2);
+  ctx.fillStyle = 'rgba(255,107,53,0.12)'; ctx.fill();
+  ctx.beginPath(); ctx.arc(ppx, ppy, cellSize*0.3, 0, Math.PI*2);
+  const grad = ctx.createRadialGradient(ppx,ppy,0,ppx,ppy,cellSize*0.35);
+  grad.addColorStop(0,'#ff8a5c'); grad.addColorStop(1,'#ff6b35');
+  ctx.fillStyle = grad; ctx.fill();
+
+  ctx.restore();
+}
+
+// ========================================
+// MINIMAP
+// ========================================
+function drawMinimap() {
+  if (!STATE.settings.minimap || !maze) return;
+  const ctx = minimapCtx;
+  const w = 100, h = 100;
+  const cols = mazeConfig.cols, rows = mazeConfig.rows;
+  ctx.fillStyle = '#0a0e1a'; ctx.fillRect(0,0,w,h);
+  const cs = Math.min(w/cols, h/rows);
+  const ox = (w - cs*cols)/2, oy = (h - cs*rows)/2;
+
+  ctx.fillStyle = '#1a2332';
+  ctx.fillRect(ox, oy, cs*cols, cs*rows);
+
+  ctx.strokeStyle = '#2a4a7c'; ctx.lineWidth = 0.5;
+  for (let y=0;y<rows;y++) for (let x=0;x<cols;x++) {
+    const c = maze[y][x], px = ox+x*cs, py = oy+y*cs;
+    if(c.walls.top){ctx.beginPath();ctx.moveTo(px,py);ctx.lineTo(px+cs,py);ctx.stroke();}
+    if(c.walls.right){ctx.beginPath();ctx.moveTo(px+cs,py);ctx.lineTo(px+cs,py+cs);ctx.stroke();}
+    if(c.walls.bottom){ctx.beginPath();ctx.moveTo(px,py+cs);ctx.lineTo(px+cs,py+cs);ctx.stroke();}
+    if(c.walls.left){ctx.beginPath();ctx.moveTo(px,py);ctx.lineTo(px,py+cs);ctx.stroke();}
+  }
+
+  ctx.beginPath();
+  ctx.arc(ox + player.x*cs + cs/2, oy + player.y*cs + cs/2, Math.max(cs*0.4,2), 0, Math.PI*2);
+  ctx.fillStyle = '#ff1744'; ctx.fill();
+}
+
+// ========================================
+// MINIMAP FULLSCREEN & ANSWER
+// ========================================
+function openMinimapFull() {
+  if (!gameRunning) return;
+  gamePaused = true;
+
+  if (minimapPaidThisStage) {
+    showFullMinimap(false);
+    return;
+  }
+
+  const cost = mazeConfig.minimapCost;
+  if (STATE.currency >= cost) {
+    STATE.currency -= cost;
+    minimapPaidThisStage = true;
+    updateMinimapCostLabel();
+    showFullMinimap(false);
+  } else {
+    adPurpose = 'minimap';
+    document.getElementById('ad-desc').innerHTML = '광고를 시청하면<br>미니맵 확대를 사용할 수 있습니다.';
+    document.getElementById('ad-modal').style.display = 'flex';
+  }
+}
+
+function showAnswer() {
+  if (answerPaidThisStage) {
+    showSolution = true;
+    renderFullMinimap();
+    return;
+  }
+  const cost = mazeConfig.minimapCost * 2;
+  if (STATE.currency >= cost) {
+    STATE.currency -= cost;
+    answerPaidThisStage = true;
+    showSolution = true;
+    renderFullMinimap();
+  } else {
+    adPurpose = 'answer';
+    document.getElementById('ad-desc').innerHTML = '광고를 시청하면<br>정답 경로를 확인할 수 있습니다.';
+    document.getElementById('ad-modal').style.display = 'flex';
+  }
+}
+
+function showFullMinimap(withAnswer) {
+  document.getElementById('minimap-fullscreen').style.display = 'flex';
+  const ansBtn = document.getElementById('btn-show-answer');
+  ansBtn.textContent = answerPaidThisStage ? '정답 보기 (무료)' : `정답 보기 (◆${mazeConfig.minimapCost * 2})`;
+  renderFullMinimap();
+}
+
+function renderFullMinimap() {
+  const canvas = document.getElementById('minimap-full-canvas');
+  const ctx = canvas.getContext('2d');
+  const size = Math.min(window.innerWidth * 0.9, window.innerHeight * 0.65);
+  canvas.width = size; canvas.height = size;
+  const cols = mazeConfig.cols, rows = mazeConfig.rows;
+  const cs = Math.min(size/cols, size/rows);
+  const ox = (size - cs*cols)/2, oy = (size - cs*rows)/2;
+
+  ctx.fillStyle = '#0a0e1a'; ctx.fillRect(0,0,size,size);
+  ctx.fillStyle = '#1a2332'; ctx.fillRect(ox, oy, cs*cols, cs*rows);
+
+  // Solution path
+  if (showSolution && solutionPath && solutionPath.length > 1) {
+    ctx.strokeStyle = 'rgba(224, 64, 251, 0.5)';
+    ctx.lineWidth = cs * 0.35;
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.beginPath();
+    ctx.moveTo(ox + solutionPath[0].x*cs + cs/2, oy + solutionPath[0].y*cs + cs/2);
+    for (let i = 1; i < solutionPath.length; i++) {
+      ctx.lineTo(ox + solutionPath[i].x*cs + cs/2, oy + solutionPath[i].y*cs + cs/2);
+    }
+    ctx.stroke();
+  }
+
+  // Trail
+  if (STATE.settings.trailOption !== 3 && trail.length > 1) {
+    ctx.strokeStyle = 'rgba(0,229,255,0.4)'; ctx.lineWidth = cs*0.25;
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.beginPath();
+    ctx.moveTo(ox+trail[0].x*cs+cs/2, oy+trail[0].y*cs+cs/2);
+    for (let i=1;i<trail.length;i++) ctx.lineTo(ox+trail[i].x*cs+cs/2, oy+trail[i].y*cs+cs/2);
+    ctx.stroke();
+  }
+
+  // Walls
+  ctx.strokeStyle = '#3a5a8c'; ctx.lineWidth = Math.max(1, cs*0.08);
+  for (let y=0;y<rows;y++) for (let x=0;x<cols;x++) {
+    const c = maze[y][x], px = ox+x*cs, py = oy+y*cs;
+    if(c.walls.top){ctx.beginPath();ctx.moveTo(px,py);ctx.lineTo(px+cs,py);ctx.stroke();}
+    if(c.walls.right){ctx.beginPath();ctx.moveTo(px+cs,py);ctx.lineTo(px+cs,py+cs);ctx.stroke();}
+    if(c.walls.bottom){ctx.beginPath();ctx.moveTo(px,py+cs);ctx.lineTo(px+cs,py+cs);ctx.stroke();}
+    if(c.walls.left){ctx.beginPath();ctx.moveTo(px,py);ctx.lineTo(px,py+cs);ctx.stroke();}
+  }
+
+  // Start/End
+  ctx.fillStyle = 'rgba(0,230,118,0.35)'; ctx.fillRect(ox,oy,cs,cs);
+  ctx.fillStyle = 'rgba(255,23,68,0.35)'; ctx.fillRect(ox+(cols-1)*cs,oy+(rows-1)*cs,cs,cs);
+
+  // Player
+  ctx.beginPath();
+  ctx.arc(ox+player.x*cs+cs/2, oy+player.y*cs+cs/2, Math.max(cs*0.35,3), 0, Math.PI*2);
+  ctx.fillStyle = '#ff1744'; ctx.fill();
+
+  document.getElementById('minimap-full-currency').textContent = `잔여 재화: ◆ ${STATE.currency}`;
+}
+
+function closeMinimapFull() {
+  document.getElementById('minimap-fullscreen').style.display = 'none';
+  showSolution = false;
+  gamePaused = false;
+}
+
+function watchAd() {
+  document.getElementById('ad-modal').style.display = 'none';
+  STATE.currency += 20;
+  if (adPurpose === 'minimap') {
+    minimapPaidThisStage = true;
+    updateMinimapCostLabel();
+    showFullMinimap(false);
+  } else {
+    answerPaidThisStage = true;
+    showSolution = true;
+    showFullMinimap(true);
+  }
+}
+function closeAdModal() {
+  document.getElementById('ad-modal').style.display = 'none';
+  gamePaused = false;
+}
+
+// ========================================
+// STAGE CLEAR
+// ========================================
+function onStageClear() {
+  gameRunning = false;
+  stopTimer();
+  STATE.stages[STATE.currentStage].cleared = true;
+  STATE.clearedStages.add(STATE.currentStage);
+
+  if (STATE.currentStage + 1 < STATE.maxStages) {
+    STATE.stages[STATE.currentStage + 1].unlocked = true;
+  }
+
+  // Record time
+  const prev = STATE.stageRecords[STATE.currentStage];
+  if (!prev || playTime < prev.bestTime) {
+    STATE.stageRecords[STATE.currentStage] = { bestTime: playTime };
+  }
+
+  // Remove save
+  delete STATE.savedGames[STATE.currentStage];
+
+  STATE.currency += 15 + STATE.currentStage * 5;
+
+  document.getElementById('clear-subtitle').textContent = `Stage ${STATE.currentStage + 1} 클리어!`;
+  document.getElementById('clear-time').textContent = formatTime(playTime);
+  document.getElementById('clear-next-btn').style.display =
+    STATE.currentStage + 1 < STATE.maxStages ? 'block' : 'none';
+  document.getElementById('clear-modal').style.display = 'flex';
+}
+
+function nextStage() {
+  document.getElementById('clear-modal').style.display = 'none';
+  startGame(STATE.currentStage + 1);
+}
+
+// ========================================
+// SETTINGS
+// ========================================
+function toggleSetting(el) {
+  el.classList.toggle('active');
+  if (el.id === 'toggle-bgm') STATE.settings.bgm = el.classList.contains('active');
+  if (el.id === 'toggle-minimap') {
+    STATE.settings.minimap = el.classList.contains('active');
+    const mc = document.getElementById('minimap-container');
+    if (mc) mc.classList.toggle('hidden', !STATE.settings.minimap);
+  }
+}
+function setTrailOption(val) {
+  STATE.settings.trailOption = val;
+  document.querySelectorAll('#trail-options .radio-option').forEach(el => el.classList.toggle('active', parseInt(el.dataset.val)===val));
+}
+function setSpeed(val) {
+  STATE.settings.speed = val;
+  document.querySelectorAll('#speed-options .speed-btn').forEach(el => el.classList.toggle('active', parseInt(el.dataset.val)===val));
+}
+
+// ========================================
+// GAME LOOP
+// ========================================
+let lastTime = 0;
+function gameLoop(timestamp) {
+  if (!gameRunning) return;
+  const dt = Math.min(timestamp - lastTime, 50); // cap dt
+  lastTime = timestamp;
+
+  if (!gamePaused) {
+    updatePlayer(dt);
+    updateCamera();
+  }
+  drawGame();
+  drawMinimap();
+  requestAnimationFrame(gameLoop);
+}
+
+// ========================================
+// KEYBOARD
+// ========================================
+const keysDown = new Set();
+document.addEventListener('keydown', e => { keysDown.add(e.key); updateKB(); });
+document.addEventListener('keyup', e => { keysDown.delete(e.key); updateKB(); });
+function updateKB() {
+  let dx=0,dy=0;
+  if(keysDown.has('ArrowLeft')||keysDown.has('a'))dx-=1;
+  if(keysDown.has('ArrowRight')||keysDown.has('d'))dx+=1;
+  if(keysDown.has('ArrowUp')||keysDown.has('w'))dy-=1;
+  if(keysDown.has('ArrowDown')||keysDown.has('s'))dy+=1;
+  if(dx||dy){joystickDX=dx;joystickDY=dy;joystickActive=true;}
+  else{joystickDX=0;joystickDY=0;joystickActive=false;}
+}
+
+// ========================================
+// INIT
+// ========================================
+window.addEventListener('load', startLoading);
+</script>
+</body>
+</html>

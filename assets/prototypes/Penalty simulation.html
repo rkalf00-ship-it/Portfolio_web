@@ -1,0 +1,1528 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>패널티 무효권 정책 시뮬레이터</title>
+  <style>
+    :root {
+      --bg: #f6f8fb;
+      --surface: #ffffff;
+      --surface-2: #eef3f9;
+      --ink: #1b2430;
+      --muted: #5c6b7a;
+      --line: #d8e0ea;
+      --primary: #1e5aa8;
+      --primary-2: #3478c7;
+      --accent: #b45f06;
+      --good: #1f7a4d;
+      --warn: #a15c00;
+      --bad: #b42318;
+      --violet: #6f4eb2;
+      --cyan: #147c8c;
+      --shadow: 0 12px 30px rgba(20, 36, 58, .08);
+      --radius: 8px;
+      --font: "Segoe UI", "Malgun Gothic", AppleSDGothicNeo, system-ui, sans-serif;
+      --mono: "Cascadia Mono", "D2Coding", Consolas, monospace;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: var(--font);
+      line-height: 1.45;
+    }
+    button, input, select { font: inherit; }
+    button, select, input[type="checkbox"], input[type="range"] { cursor: pointer; }
+    button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+      outline: 3px solid rgba(30, 90, 168, .25);
+      outline-offset: 2px;
+    }
+    .app {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 272px 1fr;
+    }
+    aside {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      background: #fbfcfe;
+      border-right: 1px solid var(--line);
+      padding: 18px 16px;
+      overflow: auto;
+    }
+    main {
+      padding: 22px;
+      min-width: 0;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+    .brand-mark {
+      width: 34px;
+      height: 34px;
+      border: 1px solid #a7c2e6;
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      background: #eaf2fd;
+      color: var(--primary);
+      font-weight: 800;
+    }
+    .brand h1 {
+      margin: 0;
+      font-size: 16px;
+      line-height: 1.2;
+    }
+    .brand small {
+      color: var(--muted);
+      display: block;
+      margin-top: 3px;
+    }
+    .nav {
+      display: grid;
+      gap: 6px;
+      margin: 14px 0 22px;
+    }
+    .nav a {
+      color: #263647;
+      text-decoration: none;
+      border-radius: 7px;
+      padding: 8px 10px;
+      font-size: 14px;
+    }
+    .nav a:hover { background: var(--surface-2); }
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+    .side-panel {
+      padding: 12px;
+      box-shadow: none;
+    }
+    .side-panel h2, .card h2, .section-title h2 {
+      margin: 0;
+      font-size: 16px;
+    }
+    .field { margin-top: 12px; }
+    .field label {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      color: var(--muted);
+      font-size: 12px;
+      margin-bottom: 6px;
+    }
+    .field output {
+      color: var(--ink);
+      font-family: var(--mono);
+      font-size: 12px;
+    }
+    select, input[type="number"], textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: #fff;
+      color: var(--ink);
+      min-height: 36px;
+      padding: 7px 9px;
+    }
+    input[type="range"] { width: 100%; accent-color: var(--primary); }
+    .switch-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .switch-row input { width: 18px; height: 18px; accent-color: var(--primary); }
+    .actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 14px;
+    }
+    .btn {
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: #fff;
+      color: var(--ink);
+      min-height: 36px;
+      padding: 7px 10px;
+      transition: background .18s ease, border-color .18s ease, transform .18s ease;
+    }
+    .btn:hover { background: #f1f5fa; border-color: #b8c6d8; }
+    .btn:active { transform: translateY(1px); }
+    .btn.primary {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: #fff;
+    }
+    .btn.primary:hover { background: #164a8d; }
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(360px, .9fr);
+      gap: 18px;
+      align-items: stretch;
+      margin-bottom: 18px;
+    }
+    .hero-copy {
+      background: #eaf0f7;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 22px;
+    }
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--primary);
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0;
+      margin-bottom: 10px;
+    }
+    .hero h2 {
+      margin: 0;
+      font-size: clamp(28px, 4vw, 48px);
+      line-height: 1.08;
+      letter-spacing: 0;
+    }
+    .hero p {
+      max-width: 760px;
+      margin: 14px 0 0;
+      color: #405163;
+      font-size: 16px;
+    }
+    .scenario-strip {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-top: 18px;
+    }
+    .scenario-chip {
+      text-align: left;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      padding: 10px;
+      min-height: 74px;
+    }
+    .scenario-chip strong { display: block; font-size: 13px; }
+    .scenario-chip span { display: block; color: var(--muted); font-size: 12px; margin-top: 4px; }
+    .scenario-chip.active { border-color: var(--primary); background: #f2f7fe; }
+    .decision-card {
+      padding: 18px;
+      display: grid;
+      gap: 14px;
+    }
+    .decision-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+      gap: 14px;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border-radius: 999px;
+      padding: 5px 9px;
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .badge.good { background: #e6f4ed; color: var(--good); }
+    .badge.warn { background: #fff3df; color: var(--warn); }
+    .badge.bad { background: #fdeceb; color: var(--bad); }
+    .score {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      align-items: center;
+      font-family: var(--mono);
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .scorebar {
+      height: 10px;
+      border-radius: 999px;
+      background: #e4ebf4;
+      overflow: hidden;
+    }
+    .scorebar span { display: block; height: 100%; background: var(--primary); }
+    .grid {
+      display: grid;
+      gap: 14px;
+    }
+    .cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .card {
+      padding: 16px;
+      overflow: hidden;
+    }
+    .metric {
+      min-height: 132px;
+      display: grid;
+      align-content: space-between;
+    }
+    .metric .label {
+      color: var(--muted);
+      font-size: 13px;
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .metric .value {
+      font-family: var(--mono);
+      font-size: 28px;
+      font-weight: 700;
+      margin-top: 8px;
+    }
+    .delta {
+      font-family: var(--mono);
+      font-size: 12px;
+      margin-top: 4px;
+    }
+    .delta.up { color: var(--good); }
+    .delta.down { color: var(--bad); }
+    .delta.neutral { color: var(--muted); }
+    .bullet {
+      margin-top: 12px;
+      height: 12px;
+      background: linear-gradient(90deg, #f7d7d4 0 33%, #fff0cf 33% 66%, #d6efe1 66% 100%);
+      border-radius: 999px;
+      position: relative;
+      overflow: hidden;
+    }
+    .bullet .fill {
+      position: absolute;
+      inset: 0 auto 0 0;
+      background: rgba(30, 90, 168, .75);
+      border-radius: inherit;
+      width: 40%;
+    }
+    .bullet .target {
+      position: absolute;
+      top: -2px;
+      width: 3px;
+      height: 16px;
+      background: #17202a;
+    }
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 14px;
+      align-items: center;
+      margin: 10px 0 14px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
+    .legend-swatch {
+      width: 18px;
+      height: 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(23, 32, 42, .16);
+      background: var(--line);
+    }
+    .legend-swatch.blue { background: rgba(30, 90, 168, .75); }
+    .legend-swatch.gray { background: #97a6b7; }
+    .legend-swatch.amber { background: #fff0cf; }
+    .legend-swatch.green { background: #d6efe1; }
+    .legend-swatch.red { background: #f7d7d4; }
+    .legend-swatch.black-line {
+      width: 18px;
+      height: 14px;
+      border: 0;
+      border-radius: 0;
+      background: linear-gradient(90deg, transparent 0 45%, #17202a 45% 55%, transparent 55% 100%);
+    }
+    .section-title {
+      margin: 28px 0 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: end;
+      gap: 16px;
+    }
+    .section-title p {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .canvas-wrap {
+      height: 320px;
+      position: relative;
+    }
+    canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+    .table-wrap {
+      overflow: auto;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 760px;
+      background: #fff;
+    }
+    th, td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      font-size: 13px;
+      vertical-align: top;
+    }
+    th {
+      background: #f0f4f9;
+      color: #344457;
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+    tr:hover td { background: #f8fbff; }
+    td.num, th.num {
+      text-align: right;
+      font-family: var(--mono);
+      white-space: nowrap;
+    }
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(150px, 1fr));
+      gap: 10px;
+    }
+    .flow-step {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      padding: 12px;
+      min-height: 110px;
+    }
+    .flow-step b { display: block; font-size: 13px; }
+    .flow-step span { color: var(--muted); font-size: 12px; display: block; margin-top: 6px; }
+    .risk-list {
+      display: grid;
+      gap: 10px;
+    }
+    .risk {
+      display: grid;
+      grid-template-columns: 160px 1fr 72px;
+      gap: 12px;
+      align-items: center;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px;
+      background: #fff;
+    }
+    .risk b { font-size: 13px; }
+    .risk small { color: var(--muted); }
+    .mini-bar {
+      height: 9px;
+      background: #e7edf5;
+      border-radius: 99px;
+      overflow: hidden;
+    }
+    .mini-bar span { display: block; height: 100%; border-radius: inherit; background: var(--primary); }
+    .sim-console {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: 14px;
+    }
+    .result-box {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fbfcfe;
+      padding: 14px;
+      min-height: 100%;
+    }
+    .result-box h3 { margin: 0 0 8px; font-size: 15px; }
+    .result-line {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      border-top: 1px solid var(--line);
+      padding: 8px 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .result-line strong { color: var(--ink); text-align: right; }
+    .notice {
+      background: #f4f7fb;
+      border: 1px dashed #b9c7d8;
+      border-radius: 8px;
+      padding: 11px 12px;
+      color: #405163;
+      font-size: 13px;
+    }
+    .formula {
+      font-family: var(--mono);
+      background: #17202a;
+      color: #eef5ff;
+      border-radius: 8px;
+      padding: 12px;
+      white-space: pre-wrap;
+      overflow: auto;
+      font-size: 12px;
+    }
+    .footer-note {
+      margin: 24px 0 4px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .toast {
+      position: fixed;
+      right: 18px;
+      bottom: 18px;
+      max-width: min(420px, calc(100vw - 36px));
+      background: #17202a;
+      color: #fff;
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 13px;
+      box-shadow: var(--shadow);
+      opacity: 0;
+      transform: translateY(8px);
+      pointer-events: none;
+      transition: opacity .18s ease, transform .18s ease;
+    }
+    .toast.show { opacity: 1; transform: translateY(0); }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; }
+    }
+    @media (max-width: 1180px) {
+      .app { grid-template-columns: 1fr; }
+      aside {
+        position: static;
+        height: auto;
+        border-right: 0;
+        border-bottom: 1px solid var(--line);
+      }
+      .nav { grid-template-columns: repeat(4, 1fr); }
+      .hero, .sim-console { grid-template-columns: 1fr; }
+      .cols-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .flow { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 720px) {
+      main { padding: 14px; }
+      .nav { grid-template-columns: repeat(2, 1fr); }
+      .scenario-strip, .cols-4, .cols-3, .cols-2 { grid-template-columns: 1fr; }
+      .decision-head, .section-title { align-items: start; flex-direction: column; }
+      .risk { grid-template-columns: 1fr; }
+      .flow { grid-template-columns: 1fr; }
+      table { min-width: 640px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside>
+      <div class="brand" aria-label="패널티 무효권 정책 시뮬레이터">
+        <div class="brand-mark">PN</div>
+        <div>
+          <h1>패널티 무효권 정책 시뮬레이터</h1>
+          <small>운영 정책 검증 대시보드</small>
+        </div>
+      </div>
+
+      <nav class="nav" aria-label="화면 이동">
+        <a href="#overview">요약</a>
+        <a href="#kpi">KPI</a>
+        <a href="#segments">세그먼트</a>
+        <a href="#risks">리스크</a>
+        <a href="#console">사용 판정</a>
+        <a href="#audit">검증</a>
+      </nav>
+
+      <section class="panel side-panel" aria-labelledby="policy-title">
+        <h2 id="policy-title">정책 조정 패널</h2>
+        <div class="field">
+          <label for="scenario">시나리오 <output id="scenarioLabel">기본안</output></label>
+          <select id="scenario">
+            <option value="baseline">Baseline - 무효권 없음</option>
+            <option value="standard" selected>기본안 - 10승당 1개</option>
+            <option value="relaxed">완화안 - 7승당 1개</option>
+            <option value="conservative">보수안 - 15승당 1개</option>
+            <option value="highTier">고랭크 제한안</option>
+            <option value="event">이벤트 지급안</option>
+            <option value="requeue">재큐 제한안</option>
+            <option value="queueShield">큐 보호 강화안</option>
+            <option value="custom">Custom</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="winsRequired">무효권 지급 승수 <output id="winsRequiredOut">10</output></label>
+          <input id="winsRequired" type="range" min="5" max="20" step="1" value="10">
+        </div>
+        <div class="field">
+          <label for="dailyLimit">일일 사용 제한 <output id="dailyLimitOut">1</output></label>
+          <input id="dailyLimit" type="range" min="0" max="3" step="1" value="1">
+        </div>
+        <div class="field">
+          <label for="eventSupply">이벤트권 공급률 <output id="eventSupplyOut">0.0%</output></label>
+          <input id="eventSupply" type="range" min="0" max="25" step="1" value="0">
+        </div>
+        <div class="field">
+          <label for="priorityRematch">우선 재매칭 강도 <output id="priorityRematchOut">60%</output></label>
+          <input id="priorityRematch" type="range" min="0" max="100" step="5" value="60">
+        </div>
+        <div class="field">
+          <label for="entryGrowth">랭크 진입 증가 가정 <output id="entryGrowthOut">4.0%</output></label>
+          <input id="entryGrowth" type="range" min="0" max="18" step="1" value="4">
+        </div>
+        <div class="field">
+          <label for="requeueCooldown">재큐 제한 강도 <output id="requeueCooldownOut">20%</output></label>
+          <input id="requeueCooldown" type="range" min="0" max="80" step="5" value="20">
+        </div>
+        <div class="field">
+          <label for="simulationLevel">시뮬레이션 레벨 <output id="simulationLevelOut">4</output></label>
+          <input id="simulationLevel" type="range" min="1" max="4" step="1" value="4">
+        </div>
+        <label class="switch-row">고랭크 사용 제한 <input id="highTierRestrict" type="checkbox"></label>
+        <label class="switch-row">무효권 보유 중 스택 정지 <input id="stackPause" type="checkbox" checked></label>
+        <label class="switch-row">우선 재매칭 적용 <input id="priorityEnabled" type="checkbox" checked></label>
+        <div class="actions">
+          <button class="btn primary" id="runBtn" type="button">실행</button>
+          <button class="btn" id="resetBtn" type="button">초기화</button>
+          <button class="btn" id="exportJsonBtn" type="button">JSON</button>
+          <button class="btn" id="exportCsvBtn" type="button">CSV</button>
+        </div>
+      </section>
+    </aside>
+
+    <main>
+      <section id="overview" class="hero" aria-labelledby="hero-title">
+        <div class="hero-copy">
+          <div class="eyebrow">Policy Simulation · Ranked Matchmaking</div>
+          <h2 id="hero-title">준비 단계 회피권이 랭크 생태계에 미치는 영향을 검증합니다.</h2>
+          <p>
+            승리 기반 무효권 획득, 일일 제한, 다인큐 및 자동 탈주 예외, 고랭크 악용 위험, 우선 재매칭 효과를
+            하나의 운영 화면에서 조정하고 KPI 변화와 도입 판정을 확인합니다.
+          </p>
+          <div class="scenario-strip" id="scenarioChips" aria-label="주요 정책 시나리오"></div>
+        </div>
+        <div class="panel decision-card">
+          <div class="decision-head">
+            <div>
+              <div class="eyebrow">최종 정책 판정</div>
+              <h2 id="decisionTitle">조건부 도입</h2>
+            </div>
+            <span class="badge warn" id="decisionBadge">검토 필요</span>
+          </div>
+          <div class="score">
+            <span>정책 안정 점수</span>
+            <strong id="stabilityScore">0</strong>
+            <div class="scorebar"><span id="scoreFill"></span></div>
+            <span id="scoreGrade">조건부</span>
+          </div>
+          <div class="notice" id="decisionReason"></div>
+          <div class="grid cols-2">
+            <div class="notice"><b>핵심 방향</b><br>성실 플레이 기반 보상형 준비 단계 회피 수단</div>
+            <div class="notice"><b>운영 원칙</b><br>비축 방지, 직접 탈주만 허용, 피해 팀원 우선 재매칭</div>
+          </div>
+        </div>
+      </section>
+
+      <section id="kpi" aria-labelledby="kpi-title">
+        <div class="section-title">
+          <div>
+            <h2 id="kpi-title">KPI 비교 화면</h2>
+            <p>Baseline 대비 현재 정책의 진입, 안정성, 보상 루프, 악용 감지 지표를 비교합니다.</p>
+          </div>
+          <span class="badge good" id="modelLevelBadge">Level 4 · 장기 공급/소비</span>
+        </div>
+        <div class="legend" aria-label="비교 그래프 색상 범례">
+          <span class="legend-item"><span class="legend-swatch blue"></span>파란색: 현재 선택 정책 값</span>
+          <span class="legend-item"><span class="legend-swatch gray"></span>회색: Baseline 기준값</span>
+          <span class="legend-item"><span class="legend-swatch red"></span>붉은 영역: 위험 구간</span>
+          <span class="legend-item"><span class="legend-swatch amber"></span>노란 영역: 주의 구간</span>
+          <span class="legend-item"><span class="legend-swatch green"></span>초록 영역: 양호 구간</span>
+          <span class="legend-item"><span class="legend-swatch black-line"></span>검은선: 목표 기준</span>
+        </div>
+        <div class="grid cols-4" id="metricCards"></div>
+        <div class="grid cols-2" style="margin-top:14px">
+          <div class="panel card">
+            <h2>KPI 변화량</h2>
+            <div class="canvas-wrap"><canvas id="kpiChart" aria-label="KPI 변화량 막대 차트"></canvas></div>
+          </div>
+          <div class="panel card">
+            <h2>큐 상쇄 모델</h2>
+            <div class="canvas-wrap"><canvas id="queueChart" aria-label="큐 지연과 상쇄 효과 차트"></canvas></div>
+          </div>
+        </div>
+        <div class="panel card" style="margin-top:14px">
+          <h2>전체 KPI 목록</h2>
+          <div class="table-wrap"><table id="kpiLedgerTable"></table></div>
+        </div>
+      </section>
+
+      <section id="flow" aria-labelledby="flow-title">
+        <div class="section-title">
+          <div>
+            <h2 id="flow-title">KPI 흐름 시각화</h2>
+            <p>기획서의 긍정/부정 가설과 큐 상쇄 경로를 운영 플로우로 표시합니다.</p>
+          </div>
+        </div>
+        <div class="flow" id="flowSteps"></div>
+      </section>
+
+      <section id="scenarios" aria-labelledby="scenario-title">
+        <div class="section-title">
+          <div>
+            <h2 id="scenario-title">시나리오 비교 테이블</h2>
+            <p>Baseline, 기본안, 완화안, 보수안, 고랭크 제한안, 이벤트 지급안, 재큐 제한안, 큐 보호 강화안을 동일 모델로 계산합니다.</p>
+          </div>
+        </div>
+        <div class="table-wrap"><table id="scenarioTable"></table></div>
+      </section>
+
+      <section id="segments" aria-labelledby="segment-title">
+        <div class="section-title">
+          <div>
+            <h2 id="segment-title">세그먼트 분석</h2>
+            <p>각 유저군의 승률, 플레이 빈도, 탈주 민감도, 악용 성향, 재큐 성향을 반영합니다.</p>
+          </div>
+        </div>
+        <div class="grid cols-2">
+          <div class="panel card">
+            <h2>세그먼트별 무효권 사용률</h2>
+            <div class="canvas-wrap"><canvas id="segmentChart" aria-label="세그먼트별 무효권 사용률"></canvas></div>
+          </div>
+          <div class="panel card">
+            <h2>세그먼트 운영 테이블</h2>
+            <div class="table-wrap"><table id="segmentTable"></table></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="risks" aria-labelledby="risk-title">
+        <div class="section-title">
+          <div>
+            <h2 id="risk-title">리스크 분석</h2>
+            <p>준비 탈주 증가, 고랭크 악용, 반복 재큐, 선별 회피, 공급 과잉, 이벤트 충돌을 판정 기준에 연결합니다.</p>
+          </div>
+        </div>
+        <div class="grid cols-2">
+          <div class="panel card">
+            <div class="risk-list" id="riskList"></div>
+          </div>
+          <div class="panel card">
+            <h2>정책 판정 기준</h2>
+            <div class="formula" id="decisionFormula"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="console" aria-labelledby="console-title">
+        <div class="section-title">
+          <div>
+            <h2 id="console-title">무효권 사용 판정 콘솔</h2>
+            <p>준비 단계 직접 탈주 시도에 대해 보유량, 일일 제한, 제재, 솔로 큐, 자동 탈주 예외를 검사합니다.</p>
+          </div>
+        </div>
+        <div class="panel card sim-console">
+          <div>
+            <div class="field">
+              <label for="ticketState">보유 무효권 <output id="ticketStateOut">1</output></label>
+              <input id="ticketState" type="range" min="0" max="1" step="1" value="1">
+            </div>
+            <div class="field">
+              <label for="winStackState">승리 스택 <output id="winStackStateOut">9</output></label>
+              <input id="winStackState" type="range" min="0" max="20" step="1" value="9">
+            </div>
+            <div class="field">
+              <label for="dailyUsageState">오늘 사용 횟수 <output id="dailyUsageStateOut">0</output></label>
+              <input id="dailyUsageState" type="range" min="0" max="3" step="1" value="0">
+            </div>
+            <label class="switch-row">준비 단계 <input id="prepStageState" type="checkbox" checked></label>
+            <label class="switch-row">제재 상태 <input id="restrictedState" type="checkbox"></label>
+            <label class="switch-row">솔로 큐 <input id="soloQueueState" type="checkbox" checked></label>
+            <label class="switch-row">직접 탈주 시도 <input id="manualDodgeState" type="checkbox" checked></label>
+          </div>
+          <div class="result-box">
+            <h3 id="useDecisionTitle">무효권 사용 가능</h3>
+            <div class="notice" id="useDecisionText"></div>
+            <div id="useDecisionLines"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="audit" aria-labelledby="audit-title">
+        <div class="section-title">
+          <div>
+            <h2 id="audit-title">기획 반영 및 검증</h2>
+            <p>기획서 항목과 HTML 산출물의 대응 관계를 점검합니다.</p>
+          </div>
+        </div>
+        <div class="panel card">
+          <div class="table-wrap"><table id="auditTable"></table></div>
+        </div>
+        <p class="footer-note">
+          Standalone HTML · 외부 라이브러리 없음 · Canvas 차트와 원자료 테이블 동시 제공 · 키보드 포커스 및 반응형 레이아웃 반영
+        </p>
+      </section>
+    </main>
+  </div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    const scenarios = {
+      baseline: {
+        label: "Baseline", short: "무효권 없음", winsRequired: 999, dailyLimit: 0, eventSupply: 0,
+        priorityRematch: 0, entryGrowth: 0, requeueCooldown: 0, highTierRestrict: false,
+        stackPause: true, priorityEnabled: false, simulationLevel: 4
+      },
+      standard: {
+        label: "기본안", short: "10승당 1개", winsRequired: 10, dailyLimit: 1, eventSupply: 0,
+        priorityRematch: 60, entryGrowth: 4, requeueCooldown: 20, highTierRestrict: false,
+        stackPause: true, priorityEnabled: true, simulationLevel: 4
+      },
+      relaxed: {
+        label: "완화안", short: "7승당 1개", winsRequired: 7, dailyLimit: 1, eventSupply: 0,
+        priorityRematch: 55, entryGrowth: 6, requeueCooldown: 15, highTierRestrict: false,
+        stackPause: true, priorityEnabled: true, simulationLevel: 4
+      },
+      conservative: {
+        label: "보수안", short: "15승당 1개", winsRequired: 15, dailyLimit: 1, eventSupply: 0,
+        priorityRematch: 65, entryGrowth: 2, requeueCooldown: 25, highTierRestrict: false,
+        stackPause: true, priorityEnabled: true, simulationLevel: 4
+      },
+      highTier: {
+        label: "고랭크 제한안", short: "상위 티어 제한", winsRequired: 10, dailyLimit: 1, eventSupply: 0,
+        priorityRematch: 65, entryGrowth: 3, requeueCooldown: 35, highTierRestrict: true,
+        stackPause: true, priorityEnabled: true, simulationLevel: 4
+      },
+      event: {
+        label: "이벤트 지급안", short: "기간제 우선 소모", winsRequired: 10, dailyLimit: 1, eventSupply: 10,
+        priorityRematch: 60, entryGrowth: 7, requeueCooldown: 20, highTierRestrict: false,
+        stackPause: false, priorityEnabled: true, simulationLevel: 4
+      },
+      requeue: {
+        label: "재큐 제한안", short: "대기시간 강화", winsRequired: 10, dailyLimit: 1, eventSupply: 0,
+        priorityRematch: 60, entryGrowth: 3, requeueCooldown: 55, highTierRestrict: false,
+        stackPause: true, priorityEnabled: true, simulationLevel: 4
+      },
+      queueShield: {
+        label: "큐 보호 강화안", short: "우선 재매칭 강화", winsRequired: 10, dailyLimit: 1, eventSupply: 0,
+        priorityRematch: 85, entryGrowth: 4, requeueCooldown: 25, highTierRestrict: false,
+        stackPause: true, priorityEnabled: true, simulationLevel: 4
+      }
+    };
+
+    const segments = [
+      { name: "Casual Ranker", share: .28, winRate: .49, plays: 2.0, tolerance: .62, abuse: .08, requeue: .55, negative: .34, highTier: false },
+      { name: "Core Ranker", share: .32, winRate: .51, plays: 4.6, tolerance: .56, abuse: .14, requeue: .72, negative: .39, highTier: false },
+      { name: "Fragile Player", share: .18, winRate: .48, plays: 3.1, tolerance: .42, abuse: .11, requeue: .46, negative: .68, highTier: false },
+      { name: "Toxic Dodger", share: .12, winRate: .50, plays: 5.2, tolerance: .37, abuse: .78, requeue: .82, negative: .55, highTier: false },
+      { name: "High Tier Player", share: .10, winRate: .53, plays: 5.8, tolerance: .48, abuse: .46, requeue: .75, negative: .50, highTier: true }
+    ];
+
+    const baselinePolicy = scenarios.baseline;
+    const state = { scenario: "standard", lastResult: null };
+    const els = {};
+
+    function clamp(value, min, max) {
+      return Math.max(min, Math.min(max, value));
+    }
+
+    function pct(value, digits = 1) {
+      return `${(value * 100).toFixed(digits)}%`;
+    }
+
+    function signedPct(value, digits = 1) {
+      const sign = value > 0 ? "+" : "";
+      return `${sign}${(value * 100).toFixed(digits)}%p`;
+    }
+
+    function num(value, digits = 1) {
+      return Number(value).toFixed(digits);
+    }
+
+    function getPolicy() {
+      return {
+        label: state.scenario === "custom" ? "Custom" : scenarios[state.scenario].label,
+        winsRequired: Number(els.winsRequired.value),
+        dailyLimit: Number(els.dailyLimit.value),
+        eventSupply: Number(els.eventSupply.value) / 100,
+        priorityRematch: Number(els.priorityRematch.value) / 100,
+        entryGrowth: Number(els.entryGrowth.value) / 100,
+        requeueCooldown: Number(els.requeueCooldown.value) / 100,
+        highTierRestrict: els.highTierRestrict.checked,
+        stackPause: els.stackPause.checked,
+        priorityEnabled: els.priorityEnabled.checked,
+        simulationLevel: Number(els.simulationLevel.value)
+      };
+    }
+
+    function setPolicy(policy, scenarioKey) {
+      state.scenario = scenarioKey || "custom";
+      els.scenario.value = state.scenario;
+      els.winsRequired.value = policy.winsRequired === 999 ? 20 : policy.winsRequired;
+      els.dailyLimit.value = policy.dailyLimit;
+      els.eventSupply.value = Math.round(policy.eventSupply);
+      els.priorityRematch.value = policy.priorityRematch;
+      els.entryGrowth.value = policy.entryGrowth;
+      els.requeueCooldown.value = policy.requeueCooldown;
+      els.highTierRestrict.checked = policy.highTierRestrict;
+      els.stackPause.checked = policy.stackPause;
+      els.priorityEnabled.checked = policy.priorityEnabled;
+      els.simulationLevel.value = policy.simulationLevel;
+      syncOutputs();
+    }
+
+    function normalizeScenarioPolicy(raw) {
+      return {
+        label: raw.label,
+        winsRequired: raw.winsRequired,
+        dailyLimit: raw.dailyLimit,
+        eventSupply: raw.eventSupply / 100,
+        priorityRematch: raw.priorityRematch / 100,
+        entryGrowth: raw.entryGrowth / 100,
+        requeueCooldown: raw.requeueCooldown / 100,
+        highTierRestrict: raw.highTierRestrict,
+        stackPause: raw.stackPause,
+        priorityEnabled: raw.priorityEnabled,
+        simulationLevel: raw.simulationLevel
+      };
+    }
+
+    function simulate(policy) {
+      const level = policy.simulationLevel;
+      const ticketActive = policy.dailyLimit > 0 && policy.winsRequired < 999;
+      let weighted = {
+        entryRate: 0, replayRate: 0, postDodgeReplayRate: 0, prepDodgeRate: 0,
+        ingameLeaveRate: 0, avgQueueTime: 0, startSuccessRate: 0, rematchRate: 0,
+        ticketAcquireRate: 0, ticketUseRate: 0, ticketReacquireRate: 0, ticketHours: 0,
+        highTierAbuse: 0, repeatAvoid: 0, requeueRepeat: 0, queueDelayFromDodge: 0,
+        queueDelayOffset: 0, netQueueDelay: 0, gamesPerUser: 0, activePool: 0,
+        supplyPressure: 0, eventConflict: 0
+      };
+
+      const rows = segments.map(seg => {
+        const badMatchScore = clamp(
+          .20 * seg.negative + .18 * seg.abuse + .16 * (1 - seg.tolerance) + .13 * (seg.highTier ? .70 : .30) + .12,
+          0,
+          1
+        );
+        const supplyBase = ticketActive ? (seg.plays * seg.winRate / Math.max(policy.winsRequired, 1)) : 0;
+        const stackPausePenalty = policy.stackPause ? .88 : 1;
+        const eventBoost = policy.eventSupply * (seg.highTier ? .75 : 1);
+        let ticketAcquire = clamp((supplyBase * stackPausePenalty) + eventBoost, 0, policy.dailyLimit || 0);
+        if (level < 4) ticketAcquire = ticketActive ? clamp(supplyBase, 0, policy.dailyLimit || 0) : 0;
+        const highTierBlock = policy.highTierRestrict && seg.highTier ? .50 : 1;
+        const abuseLimiter = 1 - policy.requeueCooldown * (.45 * seg.abuse + .20 * seg.requeue);
+        const usableTicket = ticketAcquire * highTierBlock * clamp(abuseLimiter, .35, 1);
+        const naturalPrepDodge = clamp(.014 + badMatchScore * .035 + seg.abuse * .018, 0, .10);
+        const protectedDodge = ticketActive ? clamp(usableTicket * (.20 + badMatchScore * .40 + seg.abuse * .16), 0, .16) : 0;
+        const prepDodgeRate = clamp(naturalPrepDodge + protectedDodge, 0, .22);
+        const ingameLeaveDrop = ticketActive ? protectedDodge * (.28 + seg.negative * .14) : 0;
+        const ingameLeaveRate = clamp(.050 + seg.negative * .034 + seg.abuse * .014 - ingameLeaveDrop, .012, .12);
+        const entryLift = ticketActive ? policy.entryGrowth * (level >= 4 ? (1 + seg.negative * .45) : .7) : 0;
+        const entryRate = clamp(.58 + entryLift - prepDodgeRate * .035, .40, .85);
+        const priority = policy.priorityEnabled ? policy.priorityRematch : 0;
+        const rematchRate = clamp(.43 + priority * .32 + prepDodgeRate * .25 - policy.requeueCooldown * .05, .25, .90);
+        const queueDelayFromDodge = prepDodgeRate * (level >= 3 ? 74 : 48) * (seg.highTier ? 1.45 : 1);
+        const queueDelayOffset = entryLift * (level >= 3 ? 128 : 72) + priority * 8;
+        const netQueueDelay = queueDelayFromDodge - queueDelayOffset;
+        const avgQueueTime = clamp(118 + netQueueDelay + (seg.highTier ? 70 : 0), 65, 340);
+        const startSuccessRate = clamp(.885 - prepDodgeRate * .34 - ingameLeaveRate * .20 + priority * .06 + entryLift * .22, .70, .97);
+        const replayRate = clamp(.46 + entryLift * 1.2 + rematchRate * .06 - ingameLeaveRate * .42 - Math.max(netQueueDelay, 0) / 900, .30, .76);
+        const postDodgeReplayRate = clamp(.38 + priority * .23 + entryLift * .8 - Math.max(netQueueDelay, 0) / 700 - seg.negative * .05, .20, .82);
+        const ticketUseRate = clamp(protectedDodge / Math.max(ticketAcquire, .001), 0, 1);
+        const ticketReacquireRate = clamp(ticketAcquire * seg.requeue * .72, 0, 1);
+        const ticketHours = ticketActive ? clamp(policy.winsRequired / Math.max(seg.winRate * seg.plays, .1), 1, 80) : 0;
+        const highTierAbuse = seg.highTier ? clamp(protectedDodge * seg.abuse * (policy.highTierRestrict ? .55 : 1.4), 0, .20) : 0;
+        const repeatAvoid = clamp(protectedDodge * (.30 + seg.abuse * .60) * (seg.highTier ? 1.35 : 1), 0, .22);
+        const requeueRepeat = clamp(prepDodgeRate * seg.requeue * (1 - policy.requeueCooldown * .55), 0, .18);
+        const supplyPressure = clamp(ticketAcquire / Math.max(policy.dailyLimit || 1, 1), 0, 1);
+        const eventConflict = clamp(policy.eventSupply * (policy.stackPause ? .35 : .85) + supplyPressure * .12, 0, 1);
+        const gamesPerUser = seg.plays * entryRate * startSuccessRate;
+        const activePool = seg.share * (1 + entryLift) * replayRate;
+
+        const row = {
+          ...seg, badMatchScore, ticketAcquire, protectedDodge, prepDodgeRate, ingameLeaveRate,
+          entryRate, rematchRate, queueDelayFromDodge, queueDelayOffset, netQueueDelay,
+          avgQueueTime, startSuccessRate, replayRate, postDodgeReplayRate, ticketUseRate,
+          ticketReacquireRate, ticketHours, highTierAbuse, repeatAvoid, requeueRepeat,
+          supplyPressure, eventConflict, gamesPerUser, activePool
+        };
+
+        Object.keys(weighted).forEach(key => {
+          weighted[key] += (row[key] || 0) * seg.share;
+        });
+        return row;
+      });
+
+      const risk = {
+        prepDodge: clamp((weighted.prepDodgeRate - .045) / .08, 0, 1),
+        highTierAbuse: clamp(weighted.highTierAbuse / .035, 0, 1),
+        requeueRepeat: clamp(weighted.requeueRepeat / .075, 0, 1),
+        selectiveAvoid: clamp(weighted.repeatAvoid / .065, 0, 1),
+        oversupply: clamp(weighted.supplyPressure / .72, 0, 1),
+        eventConflict: clamp(weighted.eventConflict / .35, 0, 1)
+      };
+
+      const stability = clamp(
+        72
+        + (weighted.startSuccessRate - .86) * 150
+        + (weighted.replayRate - .45) * 95
+        + (weighted.ingameLeaveRate < .055 ? 5 : -7)
+        - Math.max(weighted.avgQueueTime - 145, 0) * .13
+        - risk.highTierAbuse * 10
+        - risk.requeueRepeat * 8
+        - risk.oversupply * 7,
+        0,
+        100
+      );
+
+      let decision = "도입 가능";
+      let grade = "안정";
+      let tone = "good";
+      if (stability < 72 || weighted.avgQueueTime > 170 || risk.highTierAbuse > .58 || risk.requeueRepeat > .62) {
+        decision = "조건부 도입";
+        grade = "조건부";
+        tone = "warn";
+      }
+      if (stability < 55 || weighted.avgQueueTime > 215 || risk.oversupply > .88 || risk.eventConflict > .85) {
+        decision = "도입 보류";
+        grade = "위험";
+        tone = "bad";
+      }
+
+      return { policy, weighted, rows, risk, stability, decision, grade, tone };
+    }
+
+    function deltaClass(value, higherIsBetter = true) {
+      if (Math.abs(value) < .0005) return "neutral";
+      const good = higherIsBetter ? value > 0 : value < 0;
+      return good ? "up" : "down";
+    }
+
+    function renderMetricCards(current, base) {
+      const metrics = [
+        { key: "entryRate", label: "랭크 진입률", target: .66, higher: true, fmt: v => pct(v), group: "진입" },
+        { key: "replayRate", label: "재플레이율", target: .52, higher: true, fmt: v => pct(v), group: "유지" },
+        { key: "prepDodgeRate", label: "준비 단계 탈주율", target: .075, higher: false, fmt: v => pct(v), group: "안정성" },
+        { key: "ingameLeaveRate", label: "인게임 탈주율", target: .052, higher: false, fmt: v => pct(v), group: "안정성" },
+        { key: "avgQueueTime", label: "평균 매칭 시간", target: 145, higher: false, fmt: v => `${num(v, 0)}초`, group: "큐" },
+        { key: "startSuccessRate", label: "게임 시작 성공률", target: .89, higher: true, fmt: v => pct(v), group: "시작" },
+        { key: "ticketAcquireRate", label: "무효권 획득률", target: .22, higher: true, fmt: v => pct(v), group: "보상" },
+        { key: "ticketUseRate", label: "무효권 사용률", target: .45, higher: true, fmt: v => pct(v), group: "보상" }
+      ];
+
+      els.metricCards.innerHTML = metrics.map(item => {
+        const value = current.weighted[item.key];
+        const delta = value - base.weighted[item.key];
+        const max = item.key === "avgQueueTime" ? 260 : 1;
+        const target = item.key === "avgQueueTime" ? item.target / max : item.target;
+        const fill = item.key === "avgQueueTime" ? value / max : value;
+        const cls = deltaClass(delta, item.higher);
+        const deltaText = item.key === "avgQueueTime" ? `${delta > 0 ? "+" : ""}${num(delta, 0)}초` : signedPct(delta);
+        return `
+          <article class="panel card metric">
+            <div>
+              <div class="label"><span>${item.label}</span><span>${item.group}</span></div>
+              <div class="value">${item.fmt(value)}</div>
+              <div class="delta ${cls}">Baseline 대비 ${deltaText}</div>
+            </div>
+            <div class="bullet" aria-label="${item.label} 목표 대비 현황">
+              <span class="fill" style="width:${clamp(fill, 0, 1) * 100}%"></span>
+              <span class="target" style="left:${clamp(target, 0, 1) * 100}%"></span>
+            </div>
+          </article>
+        `;
+      }).join("");
+    }
+
+    function renderKpiLedger(current, base) {
+      const rows = [
+        ["진입/참여", "랭크 진입률", current.weighted.entryRate, base.weighted.entryRate, v => pct(v), true, "진입 부담 감소 확인"],
+        ["진입/참여", "재플레이율", current.weighted.replayRate, base.weighted.replayRate, v => pct(v), true, "장기 플레이 유지 확인"],
+        ["진입/참여", "탈주 후 재플레이율", current.weighted.postDodgeReplayRate, base.weighted.postDodgeReplayRate, v => pct(v), true, "부정 경험 완충 효과 확인"],
+        ["매칭 안정성", "준비 단계 탈주율", current.weighted.prepDodgeRate, base.weighted.prepDodgeRate, v => pct(v), false, "악용 증가 확인"],
+        ["매칭 안정성", "인게임 탈주율", current.weighted.ingameLeaveRate, base.weighted.ingameLeaveRate, v => pct(v), false, "실제 안정화 여부 확인"],
+        ["매칭 안정성", "평균 매칭 시간", current.weighted.avgQueueTime, base.weighted.avgQueueTime, v => `${num(v, 0)}초`, false, "큐 영향 확인"],
+        ["매칭 안정성", "게임 시작 성공률", current.weighted.startSuccessRate, base.weighted.startSuccessRate, v => pct(v), true, "실제 플레이 안정성 확인"],
+        ["매칭 안정성", "도입 전/후 게임 시작 성공률", current.weighted.startSuccessRate, base.weighted.startSuccessRate, v => pct(v), true, "정책 효과 비교"],
+        ["매칭 안정성", "탈주 후 재매칭률", current.weighted.rematchRate, base.weighted.rematchRate, v => pct(v), true, "큐 유지 효과 확인"],
+        ["보상 루프", "무효권 획득률", current.weighted.ticketAcquireRate, base.weighted.ticketAcquireRate, v => pct(v), true, "공급량 적정성 확인"],
+        ["보상 루프", "무효권 사용률", current.weighted.ticketUseRate, base.weighted.ticketUseRate, v => pct(v), true, "실사용 가치 확인"],
+        ["보상 루프", "무효권 재획득률", current.weighted.ticketReacquireRate, base.weighted.ticketReacquireRate, v => pct(v), true, "반복 루프 확인"],
+        ["보상 루프", "무효권 획득 예상 시간", current.weighted.ticketHours, base.weighted.ticketHours, v => current.policy.winsRequired >= 999 ? "불가" : `${num(v, 1)}시간`, false, "플레이 부담 확인"],
+        ["악용 감지", "고랭크 악용 지표", current.weighted.highTierAbuse, base.weighted.highTierAbuse, v => pct(v), false, "상위 티어 보호"],
+        ["악용 감지", "동일 유저 회피 반복률", current.weighted.repeatAvoid, base.weighted.repeatAvoid, v => pct(v), false, "선별 회피 감지"],
+        ["악용 감지", "재큐 반복률", current.weighted.requeueRepeat, base.weighted.requeueRepeat, v => pct(v), false, "큐 악용 감지"],
+        ["악용 감지", "세그먼트별 사용률", current.weighted.ticketUseRate, base.weighted.ticketUseRate, v => pct(v), false, "특정 유저군 편중 확인"]
+      ];
+      els.kpiLedgerTable.innerHTML = `
+        <thead>
+          <tr>
+            <th>분류</th>
+            <th>KPI</th>
+            <th class="num">현재</th>
+            <th class="num">Baseline</th>
+            <th class="num">차이</th>
+            <th>목적</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rows.map(([group, label, cur, prev, format, higher, purpose]) => {
+            const delta = cur - prev;
+            const deltaText = label.includes("시간") ? `${delta > 0 ? "+" : ""}${num(delta, 1)}시간` : label.includes("평균 매칭") ? `${delta > 0 ? "+" : ""}${num(delta, 0)}초` : signedPct(delta);
+            return `
+              <tr>
+                <td>${group}</td>
+                <td><b>${label}</b></td>
+                <td class="num">${format(cur)}</td>
+                <td class="num">${format(prev)}</td>
+                <td class="num"><span class="delta ${deltaClass(delta, higher)}">${deltaText}</span></td>
+                <td>${purpose}</td>
+              </tr>
+            `;
+          }).join("")}
+        </tbody>
+      `;
+    }
+
+    function drawBarChart(canvas, labels, datasets, options = {}) {
+      const ctx = canvas.getContext("2d");
+      const rect = canvas.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = Math.round(rect.width * dpr);
+      canvas.height = Math.round(rect.height * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      const w = rect.width;
+      const h = rect.height;
+      ctx.clearRect(0, 0, w, h);
+      const pad = { top: 24, right: 22, bottom: 58, left: 58 };
+      const plotW = w - pad.left - pad.right;
+      const plotH = h - pad.top - pad.bottom;
+      const allValues = datasets.flatMap(ds => ds.values);
+      const min = options.min ?? Math.min(0, ...allValues);
+      const max = options.max ?? Math.max(...allValues, 1);
+      const zeroY = pad.top + plotH - ((0 - min) / (max - min)) * plotH;
+      ctx.strokeStyle = "#d8e0ea";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(pad.left, pad.top);
+      ctx.lineTo(pad.left, pad.top + plotH);
+      ctx.lineTo(pad.left + plotW, pad.top + plotH);
+      ctx.stroke();
+      ctx.strokeStyle = "#aab8c8";
+      ctx.beginPath();
+      ctx.moveTo(pad.left, zeroY);
+      ctx.lineTo(pad.left + plotW, zeroY);
+      ctx.stroke();
+      ctx.fillStyle = "#5c6b7a";
+      ctx.font = "12px Segoe UI, sans-serif";
+      ctx.textAlign = "right";
+      ctx.fillText(options.valueLabel || "", pad.left - 8, pad.top + 5);
+      const groupW = plotW / labels.length;
+      const barW = Math.min(28, (groupW - 18) / datasets.length);
+      labels.forEach((label, i) => {
+        const startX = pad.left + i * groupW + groupW / 2 - (barW * datasets.length) / 2;
+        datasets.forEach((ds, j) => {
+          const value = ds.values[i];
+          const y = pad.top + plotH - ((value - min) / (max - min)) * plotH;
+          const barH = Math.abs(zeroY - y);
+          ctx.fillStyle = ds.color;
+          ctx.fillRect(startX + j * barW, Math.min(y, zeroY), barW - 3, Math.max(1, barH));
+          ctx.fillStyle = "#344457";
+          ctx.font = "11px Cascadia Mono, Consolas, monospace";
+          ctx.textAlign = "center";
+          const shown = options.percent ? `${(value * 100).toFixed(1)}` : value.toFixed(0);
+          ctx.fillText(shown, startX + j * barW + (barW - 3) / 2, Math.min(y, zeroY) - 5);
+        });
+        ctx.save();
+        ctx.translate(pad.left + i * groupW + groupW / 2, pad.top + plotH + 18);
+        ctx.rotate(-Math.PI / 7);
+        ctx.fillStyle = "#405163";
+        ctx.font = "12px Segoe UI, sans-serif";
+        ctx.textAlign = "right";
+        ctx.fillText(label, 0, 0);
+        ctx.restore();
+      });
+      let lx = pad.left;
+      datasets.forEach(ds => {
+        ctx.fillStyle = ds.color;
+        ctx.fillRect(lx, 8, 12, 12);
+        ctx.fillStyle = "#405163";
+        ctx.font = "12px Segoe UI, sans-serif";
+        ctx.textAlign = "left";
+        ctx.fillText(ds.name, lx + 17, 18);
+        lx += ctx.measureText(ds.name).width + 46;
+      });
+    }
+
+    function renderCharts(current, base) {
+      drawBarChart(
+        els.kpiChart,
+        ["진입률", "재플레이", "준비탈주", "인게임탈주", "시작성공", "재매칭"],
+        [
+          { name: "Baseline", color: "#97a6b7", values: [
+            base.weighted.entryRate, base.weighted.replayRate, base.weighted.prepDodgeRate,
+            base.weighted.ingameLeaveRate, base.weighted.startSuccessRate, base.weighted.rematchRate
+          ] },
+          { name: current.policy.label, color: "#1e5aa8", values: [
+            current.weighted.entryRate, current.weighted.replayRate, current.weighted.prepDodgeRate,
+            current.weighted.ingameLeaveRate, current.weighted.startSuccessRate, current.weighted.rematchRate
+          ] }
+        ],
+        { min: 0, max: 1, percent: true, valueLabel: "%" }
+      );
+      drawBarChart(
+        els.queueChart,
+        ["탈주 지연", "진입 상쇄", "순 지연", "평균 큐"],
+        [
+          { name: "초", color: "#b45f06", values: [
+            current.weighted.queueDelayFromDodge,
+            -current.weighted.queueDelayOffset,
+            current.weighted.netQueueDelay,
+            current.weighted.avgQueueTime
+          ] }
+        ],
+        { min: Math.min(-40, -current.weighted.queueDelayOffset - 10), max: Math.max(220, current.weighted.avgQueueTime + 30), valueLabel: "sec" }
+      );
+      drawBarChart(
+        els.segmentChart,
+        current.rows.map(r => r.name.replace(" ", "\n")),
+        [
+          { name: "사용률", color: "#147c8c", values: current.rows.map(r => r.ticketUseRate) },
+          { name: "악용 성향", color: "#b45f06", values: current.rows.map(r => r.abuse) }
+        ],
+        { min: 0, max: 1, percent: true, valueLabel: "%" }
+      );
+    }
+
+    function renderFlow(result) {
+      const steps = [
+        ["승리 스택 누적", `랭크 승리 ${result.policy.winsRequired >= 999 ? "불가" : result.policy.winsRequired + "회"} 달성 시 최대 1개 보유`],
+        ["제한적 준비 회피", `일일 ${result.policy.dailyLimit}회, 솔로 큐, 직접 탈주, 제재 없음 조건 검사`],
+        ["우선 재매칭", result.policy.priorityEnabled ? `피해 팀원 보호 강도 ${pct(result.policy.priorityRematch, 0)}` : "미적용"],
+        ["큐 상쇄", `순 큐 지연 ${num(result.weighted.netQueueDelay, 0)}초, 진입 증가 ${pct(result.policy.entryGrowth)}`],
+        ["정책 판정", `${result.decision} · 안정 점수 ${num(result.stability, 0)}`]
+      ];
+      els.flowSteps.innerHTML = steps.map((s, i) => `
+        <div class="flow-step">
+          <b>${i + 1}. ${s[0]}</b>
+          <span>${s[1]}</span>
+        </div>
+      `).join("");
+    }
+
+    function renderScenarioChips() {
+      const keys = ["baseline", "standard", "relaxed", "conservative", "highTier", "event", "requeue", "queueShield"];
+      els.scenarioChips.innerHTML = keys.map(key => `
+        <button type="button" class="scenario-chip ${state.scenario === key ? "active" : ""}" data-scenario="${key}">
+          <strong>${scenarios[key].label}</strong>
+          <span>${scenarios[key].short}</span>
+        </button>
+      `).join("");
+      els.scenarioChips.querySelectorAll("button").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const key = btn.dataset.scenario;
+          setPolicy(scenarios[key], key);
+          run();
+        });
+      });
+    }
+
+    function renderScenarioTable() {
+      const keys = ["baseline", "standard", "relaxed", "conservative", "highTier", "event", "requeue", "queueShield"];
+      const rows = keys.map(key => simulate(normalizeScenarioPolicy(scenarios[key])));
+      els.scenarioTable.innerHTML = `
+        <thead>
+          <tr>
+            <th>시나리오</th>
+            <th class="num">진입률</th>
+            <th class="num">준비 탈주율</th>
+            <th class="num">인게임 탈주율</th>
+            <th class="num">평균 매칭</th>
+            <th class="num">시작 성공률</th>
+            <th class="num">악용 지표</th>
+            <th class="num">안정 점수</th>
+            <th>판정</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rows.map(r => `
+            <tr>
+              <td><b>${r.policy.label}</b></td>
+              <td class="num">${pct(r.weighted.entryRate)}</td>
+              <td class="num">${pct(r.weighted.prepDodgeRate)}</td>
+              <td class="num">${pct(r.weighted.ingameLeaveRate)}</td>
+              <td class="num">${num(r.weighted.avgQueueTime, 0)}초</td>
+              <td class="num">${pct(r.weighted.startSuccessRate)}</td>
+              <td class="num">${pct(r.weighted.highTierAbuse + r.weighted.repeatAvoid, 1)}</td>
+              <td class="num">${num(r.stability, 0)}</td>
+              <td><span class="badge ${r.tone}">${r.decision}</span></td>
+            </tr>
+          `).join("")}
+        </tbody>
+      `;
+    }
+
+    function renderSegmentTable(result) {
+      els.segmentTable.innerHTML = `
+        <thead>
+          <tr>
+            <th>세그먼트</th>
+            <th class="num">비중</th>
+            <th class="num">승률</th>
+            <th class="num">플레이</th>
+            <th class="num">부정 점수</th>
+            <th class="num">획득률</th>
+            <th class="num">사용률</th>
+            <th class="num">재큐 반복</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${result.rows.map(r => `
+            <tr>
+              <td><b>${r.name}</b></td>
+              <td class="num">${pct(r.share, 0)}</td>
+              <td class="num">${pct(r.winRate, 0)}</td>
+              <td class="num">${num(r.plays)}</td>
+              <td class="num">${pct(r.badMatchScore)}</td>
+              <td class="num">${pct(r.ticketAcquire)}</td>
+              <td class="num">${pct(r.ticketUseRate)}</td>
+              <td class="num">${pct(r.requeueRepeat)}</td>
+            </tr>
+          `).join("")}
+        </tbody>
+      `;
+    }
+
+    function renderRisks(result) {
+      const risks = [
+        ["준비 탈주 증가", "큐 안정성 저하 가능성", result.risk.prepDodge],
+        ["고랭크 악용", "반복 매칭 환경의 선별 회피 위험", result.risk.highTierAbuse],
+        ["반복 재큐", "대기시간 증가와 큐 피로 누적", result.risk.requeueRepeat],
+        ["선별 회피", "조합/유저 선택 악용 가능성", result.risk.selectiveAvoid],
+        ["공급 과잉", "무효권 가치 하락 및 파밍 유인", result.risk.oversupply],
+        ["이벤트 충돌", "기간제 지급과 승리 스택 정책 충돌", result.risk.eventConflict]
+      ];
+      els.riskList.innerHTML = risks.map(([name, desc, value]) => {
+        const color = value > .72 ? "var(--bad)" : value > .45 ? "var(--warn)" : "var(--good)";
+        return `
+          <div class="risk">
+            <div><b>${name}</b><br><small>${desc}</small></div>
+            <div class="mini-bar"><span style="width:${value * 100}%; background:${color}"></span></div>
+            <div class="num">${pct(value, 0)}</div>
+          </div>
+        `;
+      }).join("");
+      els.decisionFormula.textContent =
+`bad_match_score =
+  role_conflict + toxic_player + tier_mismatch + repeat_match + recent_negative_experience
+
+dodge =
+  bad_match_score > tolerance AND ticket_available AND policy_allowed
+
+net_queue_delay =
+  queue_delay_from_dodge - queue_delay_offset_from_entry_growth
+
+final_decision =
+  start_success + replay + ingame_leave_drop
+  - queue_delay_risk - high_tier_abuse - requeue_repeat - oversupply`;
+    }
+
+    function renderDecision(result) {
+      els.decisionTitle.textContent = result.decision;
+      els.decisionBadge.textContent = result.grade;
+      els.decisionBadge.className = `badge ${result.tone}`;
+      els.stabilityScore.textContent = num(result.stability, 0);
+      els.scoreGrade.textContent = result.grade;
+      els.scoreFill.style.width = `${result.stability}%`;
+      const reasons = [];
+      if (result.weighted.ingameLeaveRate < .055) reasons.push("인게임 탈주율 완화 효과가 확인됩니다");
+      if (result.weighted.avgQueueTime > 170) reasons.push("평균 매칭 시간이 운영 기준을 초과합니다");
+      if (result.risk.highTierAbuse > .58) reasons.push("고랭크 악용 지표가 높아 제한 정책이 필요합니다");
+      if (result.risk.oversupply > .72) reasons.push("공급 과잉으로 무효권 가치 하락 가능성이 있습니다");
+      if (reasons.length === 0) reasons.push("핵심 KPI가 안정 범위에 있으며 우선 재매칭으로 피해 유저 보호가 작동합니다");
+      els.decisionReason.textContent = reasons.join(". ") + ".";
+      els.modelLevelBadge.textContent = `Level ${result.policy.simulationLevel} · ${["", "승률 기반", "세그먼트 행동", "큐/재큐/고랭크", "장기 공급/소비"][result.policy.simulationLevel]}`;
+    }
+
+    function renderUseDecision() {
+      const policy = getPolicy();
+      const checks = [
+        ["준비 단계", els.prepStageState.checked],
+        ["무효권 보유", Number(els.ticketState.value) === 1],
+        ["일일 제한 미도달", Number(els.dailyUsageState.value) < policy.dailyLimit],
+        ["제재 상태 아님", !els.restrictedState.checked],
+        ["솔로 큐", els.soloQueueState.checked],
+        ["직접 탈주 시도", els.manualDodgeState.checked]
+      ];
+      const allowed = checks.every(c => c[1]);
+      els.useDecisionTitle.textContent = allowed ? "무효권 사용 가능" : "일반 탈주 처리";
+      els.useDecisionText.textContent = allowed
+        ? "팝업을 표시하고 유저가 사용을 확정하면 무효권을 소모, 패널티를 미적용, 로비 이동 후 남은 팀원에게 우선 재매칭을 적용합니다."
+        : "조건을 모두 만족하지 못했습니다. 자동 탈주, 다인큐, 제재 상태, 일일 제한 초과는 일반 탈주 패널티 흐름으로 처리합니다.";
+      els.useDecisionLines.innerHTML = checks.map(([label, ok]) => `
+        <div class="result-line"><span>${label}</span><strong style="color:${ok ? "var(--good)" : "var(--bad)"}">${ok ? "통과" : "실패"}</strong></div>
+      `).join("");
+    }
+
+    function renderAudit() {
+      const rows = [
+        ["ai-skill-toolkit 기술 참조", "README의 Goal-Driven Execution, ui-ux-pro-max 디자인/차트/검증 지침 반영", "반영"],
+        ["패널티_무효권_시스템_기획서.md", "목표, 문제 정의, 철학, 용어, 구조, 예외, 세그먼트, KPI, 가설, 시나리오, UX, 판정, 리스크 포함", "반영"],
+        ["README.MD", "파일은 0바이트라 추가 요구사항 없음. 산출물 실행 방법은 별도 README에 보강 가능", "확인"],
+        ["무효권 획득 시스템", "승리 스택, 지급 승수, 최대 1개, 보유 중 스택 정지, 이벤트권 정책 조정", "반영"],
+        ["사용 조건", "준비 단계, 보유량, 일일 제한, 제재 아님, 솔로 큐, 직접 탈주 콘솔 검사", "반영"],
+        ["우선 재매칭", "피해 팀원 대상 강도 조정 및 큐 상쇄 계산 반영", "반영"],
+        ["예외 상황", "다인큐, 자동 탈주, 이벤트권, 고랭크 제한 시나리오 반영", "반영"],
+        ["세그먼트", "5개 세그먼트별 승률/빈도/민감도/악용/재큐/고랭크 속성 계산", "반영"],
+        ["KPI 구조", "진입/참여, 안정성, 보상 루프, 악용 감지 카드/차트/표 제공", "반영"],
+        ["정책 시나리오", "Baseline, 기본안, 완화안, 보수안, 고랭크 제한안, 이벤트 지급안, 재큐 제한안, 큐 보호 강화안 제공", "반영"],
+        ["정책 판정", "도입 가능, 조건부 도입, 도입 보류를 안정 점수와 리스크 기준으로 산출", "반영"],
+        ["실무 사용성", "프리셋, 슬라이더, 원자료 테이블, JSON/CSV 내보내기, 독립 실행형 HTML", "반영"]
+      ];
+      els.auditTable.innerHTML = `
+        <thead><tr><th>요구사항</th><th>구현 증거</th><th>상태</th></tr></thead>
+        <tbody>${rows.map(r => `<tr><td><b>${r[0]}</b></td><td>${r[1]}</td><td><span class="badge good">${r[2]}</span></td></tr>`).join("")}</tbody>
+      `;
+    }
+
+    function syncOutputs() {
+      const policy = getPolicy();
+      els.scenarioLabel.textContent = state.scenario === "custom" ? "Custom" : scenarios[state.scenario]?.label || "Custom";
+      els.winsRequiredOut.textContent = policy.winsRequired;
+      els.dailyLimitOut.textContent = policy.dailyLimit;
+      els.eventSupplyOut.textContent = pct(policy.eventSupply, 1);
+      els.priorityRematchOut.textContent = pct(policy.priorityRematch, 0);
+      els.entryGrowthOut.textContent = pct(policy.entryGrowth, 1);
+      els.requeueCooldownOut.textContent = pct(policy.requeueCooldown, 0);
+      els.simulationLevelOut.textContent = policy.simulationLevel;
+      els.ticketStateOut.textContent = els.ticketState.value;
+      els.winStackStateOut.textContent = els.winStackState.value;
+      els.dailyUsageStateOut.textContent = els.dailyUsageState.value;
+    }
+
+    function run() {
+      syncOutputs();
+      const current = simulate(getPolicy());
+      const base = simulate(normalizeScenarioPolicy(baselinePolicy));
+      state.lastResult = current;
+      renderScenarioChips();
+      renderDecision(current);
+      renderMetricCards(current, base);
+      renderKpiLedger(current, base);
+      renderCharts(current, base);
+      renderFlow(current);
+      renderScenarioTable();
+      renderSegmentTable(current);
+      renderRisks(current);
+      renderUseDecision();
+      renderAudit();
+    }
+
+    function showToast(text) {
+      els.toast.textContent = text;
+      els.toast.classList.add("show");
+      window.setTimeout(() => els.toast.classList.remove("show"), 2200);
+    }
+
+    function downloadText(filename, text, type) {
+      const blob = new Blob([text], { type });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    function exportJson() {
+      const payload = {
+        generatedAt: new Date().toISOString(),
+        policy: state.lastResult.policy,
+        weightedKpi: state.lastResult.weighted,
+        risks: state.lastResult.risk,
+        decision: state.lastResult.decision,
+        stability: state.lastResult.stability,
+        segments: state.lastResult.rows
+      };
+      downloadText("penalty-nullification-simulation.json", JSON.stringify(payload, null, 2), "application/json");
+      showToast("JSON 결과를 생성했습니다.");
+    }
+
+    function exportCsv() {
+      const rows = state.lastResult.rows;
+      const headers = ["segment", "share", "winRate", "plays", "badMatchScore", "ticketAcquire", "ticketUseRate", "prepDodgeRate", "ingameLeaveRate", "avgQueueTime", "requeueRepeat"];
+      const csv = [headers.join(",")].concat(rows.map(r => headers.map(h => r[h]).join(","))).join("\n");
+      downloadText("penalty-nullification-segments.csv", csv, "text/csv");
+      showToast("CSV 결과를 생성했습니다.");
+    }
+
+    function bind() {
+      [
+        "scenario", "winsRequired", "dailyLimit", "eventSupply", "priorityRematch", "entryGrowth",
+        "requeueCooldown", "simulationLevel", "highTierRestrict", "stackPause", "priorityEnabled",
+        "ticketState", "winStackState", "dailyUsageState", "prepStageState", "restrictedState",
+        "soloQueueState", "manualDodgeState"
+      ].forEach(id => { els[id] = document.getElementById(id); });
+      [
+        "scenarioLabel", "winsRequiredOut", "dailyLimitOut", "eventSupplyOut", "priorityRematchOut",
+        "entryGrowthOut", "requeueCooldownOut", "simulationLevelOut", "ticketStateOut",
+        "winStackStateOut", "dailyUsageStateOut", "metricCards", "kpiChart", "queueChart",
+        "segmentChart", "flowSteps", "scenarioChips", "scenarioTable", "segmentTable",
+        "riskList", "decisionFormula", "decisionTitle", "decisionBadge", "stabilityScore",
+        "scoreFill", "scoreGrade", "decisionReason", "modelLevelBadge", "useDecisionTitle",
+        "useDecisionText", "useDecisionLines", "auditTable", "toast", "kpiLedgerTable"
+      ].forEach(id => { els[id] = document.getElementById(id); });
+
+      els.scenario.addEventListener("change", () => {
+        const key = els.scenario.value;
+        if (key !== "custom") setPolicy(scenarios[key], key);
+        else state.scenario = "custom";
+        run();
+      });
+      document.querySelectorAll("input, select").forEach(input => {
+        if (input.id === "scenario") return;
+        input.addEventListener("input", () => {
+          if (!["ticketState", "winStackState", "dailyUsageState", "prepStageState", "restrictedState", "soloQueueState", "manualDodgeState"].includes(input.id)) {
+            state.scenario = "custom";
+            els.scenario.value = "custom";
+          }
+          run();
+        });
+        input.addEventListener("change", run);
+      });
+      document.getElementById("runBtn").addEventListener("click", () => { run(); showToast("시뮬레이션을 갱신했습니다."); });
+      document.getElementById("resetBtn").addEventListener("click", () => { setPolicy(scenarios.standard, "standard"); run(); });
+      document.getElementById("exportJsonBtn").addEventListener("click", exportJson);
+      document.getElementById("exportCsvBtn").addEventListener("click", exportCsv);
+      window.addEventListener("resize", () => window.requestAnimationFrame(run));
+    }
+
+    bind();
+    setPolicy(scenarios.standard, "standard");
+    run();
+  </script>
+</body>
+</html>

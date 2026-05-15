@@ -1,0 +1,4596 @@
+﻿<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>로스트아크 코어 콘텐츠 진입 플로우 - 개선 제안 프로토타입</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet" />
+  <style>
+/* ============================================================
+   Lost Ark - Core Content Entry Flow Improvement Simulation
+   Wireframe + dark polish theme
+   ============================================================ */
+
+:root {
+  --bg-game: #2a2a2a;
+  --bg-game-2: #1a1a1a;
+  --bg-panel: #C8C8C8;
+  --bg-panel-2: #A0A0A0;
+  --bg-panel-3: #D3D3D3;
+  --bg-panel-dark: #3a3a3a;
+  --bg-profile: #B0B0B0;
+  --border: #8a8a8a;
+  --border-strong: #555;
+  --text: #333333;
+  --text-dim: #555;
+  --text-game: #e0e0e0;
+  --accent: #c9a961;
+  --accent-dark: #9a7a30;
+  --accent-light: #e9d08e;
+  --success: #4caf50;
+  --success-dark: #2e7d32;
+  --danger: #e53935;
+  --disabled: #9a9a9a;
+  --shadow: 0 8px 28px rgba(0, 0, 0, 0.55);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  width: 100%;
+  height: 100%;
+  background: #000;
+  overflow: hidden;
+}
+
+body {
+  /* Internal design at FHD (1920×1080), scaled to fit viewport */
+  width: 1920px;
+  height: 1080px;
+  font-family: "Noto Sans KR", "Dotum", "돋움", "Malgun Gothic", "맑은 고딕", sans-serif;
+  font-size: 13px;
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: #000;
+  overflow: hidden;
+  user-select: none;
+  transform-origin: top left;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+button {
+  font-family: inherit;
+  font-size: inherit;
+  cursor: pointer;
+  border: none;
+  background: none;
+  color: inherit;
+}
+
+kbd {
+  display: inline-block;
+  padding: 2px 6px;
+  background: #333;
+  color: #fff;
+  border: 1px solid #555;
+  border-bottom-width: 2px;
+  border-radius: 3px;
+  font-family: monospace;
+  font-size: 11px;
+}
+
+.hidden { display: none !important; }
+
+/* ============================================================
+   GAME WORLD (main screen)
+   ============================================================ */
+#game-world {
+  position: absolute;
+  top: 0; left: 0;
+  width: 1920px;
+  height: 1080px;
+  background:
+    radial-gradient(ellipse at center, #3a3a3a 0%, #1a1a1a 100%);
+  overflow: hidden;
+}
+
+.main-screen-label {
+  position: absolute;
+  top: calc(50% + 180px);
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 28px;
+  color: #888;
+  letter-spacing: 4px;
+  text-shadow: 0 2px 6px #000;
+}
+
+.minimap {
+  position: absolute;
+  top: 0; right: 0;
+  width: 320px; height: 320px;
+  background: #505050;
+  border-left: 2px solid #2a2a2a;
+  border-bottom: 2px solid #2a2a2a;
+  display: flex; align-items: center; justify-content: center;
+  color: #eee;
+  font-size: 22px;
+  letter-spacing: 4px;
+}
+
+.widget-bar {
+  position: absolute;
+  top: 322px; right: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px 4px 8px;
+  background: rgba(0,0,0,0.45);
+  border-top-left-radius: 6px;
+}
+.widget-slots {
+  display: flex;
+  gap: 4px;
+}
+.widget-btn {
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #e0e0e0, #b8b8b8);
+  color: #1a1a1a;
+  font-size: 10px;
+  font-weight: 700;
+  border: 1px solid #555;
+  transition: transform 0.1s, filter 0.1s;
+}
+.widget-btn:hover { filter: brightness(1.1); transform: translateY(-1px); }
+#btn-open-party {
+  background: linear-gradient(180deg, #6ec6ff, #1a8ad6);
+  color: #fff;
+  border-color: #1565a0;
+}
+.widget-btn.hamburger {
+  border-radius: 6px;
+  width: 36px;
+  font-size: 20px;
+  background: linear-gradient(180deg, #d5b778, var(--accent-dark));
+  color: #1a1a1a;
+}
+
+.player {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.player-head {
+  width: 110px; height: 110px;
+  background: #5ac464;
+  border-radius: 50%;
+  border: 3px solid rgba(0,0,0,0.25);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+}
+.player-body {
+  margin-top: -14px;
+  width: 160px; height: 210px;
+  background: #5ac464;
+  border: 3px solid rgba(0,0,0,0.25);
+  color: #1a1a1a;
+  font-size: 32px;
+  font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+}
+
+/* ============================================================
+   WIDGET ORDER SETTINGS PANEL
+   ============================================================ */
+.widget-order-panel {
+  position: absolute;
+  top: 366px;
+  right: 10px;
+  width: 240px;
+  background: rgba(0, 0, 0, 0.88);
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  z-index: 60;
+  color: #e0e0e0;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+  animation: windowIn 0.18s ease-out;
+}
+.wo-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-bottom: 1px solid #444;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent);
+}
+.wo-close {
+  width: 22px; height: 22px;
+  background: #555;
+  color: #ddd;
+  border: 1px solid #666;
+  border-radius: 3px;
+  font-size: 11px;
+  cursor: pointer;
+}
+.wo-close:hover { background: var(--danger); color: #fff; }
+.wo-list {
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 320px;
+  overflow-y: auto;
+}
+.wo-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid #555;
+  border-radius: 4px;
+  font-size: 12px;
+  color: #ddd;
+  transition: background 0.12s;
+}
+.wo-item.dragging {
+  background: rgba(201, 169, 97, 0.25);
+  border-color: var(--accent);
+}
+.wo-item-name {
+  flex: 1;
+  font-weight: 600;
+}
+.wo-item-party .wo-item-name {
+  color: #6ec6ff;
+}
+.wo-arrows {
+  display: flex;
+  gap: 2px;
+}
+.wo-arrow {
+  width: 22px; height: 22px;
+  background: #444;
+  border: 1px solid #666;
+  border-radius: 3px;
+  color: #ccc;
+  font-size: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.1s;
+}
+.wo-arrow:hover {
+  background: var(--accent);
+  color: #1a1a1a;
+  border-color: var(--accent-dark);
+}
+.wo-order-num {
+  font-size: 10px;
+  color: #888;
+  width: 16px;
+  text-align: center;
+}
+.wo-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+  padding: 8px 10px;
+  border-top: 1px solid #444;
+}
+.btn-sm {
+  padding: 5px 12px;
+  font-size: 10px;
+}
+
+.kb-hint {
+  position: absolute;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 14px 28px;
+  background: rgba(0,0,0,0.72);
+  border: 1px solid rgba(201,169,97,0.3);
+  color: #ddd;
+  border-radius: 28px;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.kb-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 8px;
+  color: #ddd;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.kb-btn:hover {
+  background: rgba(201,169,97,0.25);
+  border-color: var(--accent);
+  color: #fff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+}
+.kb-btn:active {
+  transform: translateY(0);
+}
+.kb-btn span {
+  font-weight: 600;
+}
+.kb-divider {
+  color: #666;
+  font-size: 16px;
+  user-select: none;
+}
+
+/* ============================================================
+   STEP COUNTER
+   ============================================================ */
+#depth-counter {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  width: 280px;
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+  padding: 12px 14px;
+  background: rgba(0,0,0,0.78);
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  color: #e8d59b;
+  z-index: 50;
+  scrollbar-width: thin;
+}
+#depth-counter::-webkit-scrollbar { width: 6px; }
+#depth-counter::-webkit-scrollbar-thumb { background: #555; border-radius: 3px; }
+
+.depth-title {
+  font-size: 10px;
+  color: #c9a961;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+.depth-scenario-name {
+  display: inline-block;
+  margin-top: 4px;
+  padding: 2px 8px;
+  background: var(--accent);
+  color: #1a1a1a;
+  font-size: 10px;
+  font-weight: 700;
+  border-radius: 10px;
+}
+.depth-meter {
+  font-size: 42px;
+  font-weight: 700;
+  line-height: 1;
+  margin: 6px 0 2px;
+  color: #fff;
+}
+.depth-unit {
+  font-size: 14px;
+  color: #c9a961;
+  font-weight: 600;
+  margin-left: 2px;
+  vertical-align: baseline;
+}
+.depth-slash { color: #666; margin: 0 4px; }
+.depth-max { color: #777; font-size: 22px; }
+.depth-label {
+  font-size: 11px;
+  color: #aaa;
+  margin-top: 6px;
+  margin-bottom: 4px;
+}
+.depth-bar {
+  width: 100%; height: 6px;
+  background: #333;
+  border-radius: 3px;
+  overflow: hidden;
+}
+.depth-fill {
+  height: 100%; width: 0%;
+  background: linear-gradient(90deg, #4caf50, #c9a961, #e53935);
+  transition: width 0.3s ease;
+}
+
+/* Per-step situation list */
+.step-situation {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #3a3a3a;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.step-item {
+  padding: 8px 10px 9px;
+  background: rgba(255, 255, 255, 0.035);
+  border-left: 3px solid #555;
+  border-radius: 2px;
+  font-size: 13px;
+  color: #aaa;
+  line-height: 1.5;
+  transition: all 0.2s;
+}
+.step-item b {
+  color: #c9a961;
+  margin-right: 4px;
+  font-weight: 700;
+  font-size: 13px;
+}
+.step-item small {
+  display: block;
+  font-size: 11px;
+  color: #777;
+  margin-top: 3px;
+  line-height: 1.5;
+}
+.step-item.done {
+  border-left-color: #4caf50;
+  color: #888;
+}
+.step-item.done b { color: #4caf50; }
+.step-item.done b::before { content: "✓ "; }
+.step-item.active {
+  background: rgba(201, 169, 97, 0.2);
+  border-left-color: var(--accent);
+  color: #fff;
+  box-shadow: 0 0 0 1px rgba(201, 169, 97, 0.35);
+}
+.step-item.active b { color: var(--accent-light); }
+.step-item.active small { color: #ddd; }
+
+/* ============================================================
+   FLOW GUIDE
+   ============================================================ */
+#flow-guide {
+  position: absolute;
+  top: 16px;
+  left: 316px;
+  right: 248px;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 12px 16px;
+  background: rgba(0,0,0,0.78);
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  color: #e8e0c0;
+  z-index: 50;
+}
+.fg-title {
+  font-size: 13px;
+  color: var(--accent);
+  margin-bottom: 6px;
+  font-weight: 700;
+}
+
+/* Floating 사용법 button — top-center-right, between flow-guide and minimap */
+.help-fab {
+  position: absolute;
+  top: 20px;
+  right: 360px;
+  z-index: 55;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 24px;
+  background: linear-gradient(180deg, #e9d08e, var(--accent-dark));
+  color: #1a1a1a;
+  border: 2px solid var(--accent-dark);
+  border-radius: 10px;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.2) inset;
+  transition: transform 0.12s, filter 0.12s, box-shadow 0.15s;
+  animation: helpFabPulse 2.4s ease-in-out infinite;
+}
+.help-fab:hover {
+  filter: brightness(1.1);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.25) inset;
+}
+.help-fab:active { transform: translateY(0); }
+.help-fab-icon { font-size: 24px; line-height: 1; }
+.help-fab-text { font-size: 18px; font-weight: 700; }
+@keyframes helpFabPulse {
+  0%, 100% { box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5), 0 0 0 0 rgba(201, 169, 97, 0.55); }
+  50%      { box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5), 0 0 0 10px rgba(201, 169, 97, 0); }
+}
+
+/* ============================================================
+   POPUP: HELP (사용법 안내)
+   ============================================================ */
+.help-window {
+  width: 880px;
+  max-width: 96vw;
+  height: 620px;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-panel, #C8C8C8);
+  color: #222;
+  border-radius: 6px;
+  overflow: hidden;
+}
+.help-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  background: linear-gradient(135deg, #2a2a2a, #1a1a1a);
+  color: var(--accent-light, #e9d08e);
+  font-size: 16px;
+  font-weight: 700;
+  border-bottom: 2px solid var(--accent);
+}
+.help-body {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  flex: 1;
+  min-height: 0;
+}
+.help-nav {
+  display: flex;
+  flex-direction: column;
+  background: #b5b5b5;
+  border-right: 1px solid #888;
+  padding: 8px 6px;
+  gap: 3px;
+  overflow-y: auto;
+}
+.help-nav-btn {
+  padding: 10px 12px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  text-align: left;
+  font-size: 12px;
+  font-weight: 600;
+  color: #333;
+  cursor: pointer;
+  transition: all 0.12s;
+}
+.help-nav-btn:hover {
+  background: rgba(255,255,255,0.35);
+  border-color: #999;
+}
+.help-nav-btn.active {
+  background: var(--accent, #c9a961);
+  color: #1a1a1a;
+  border-color: var(--accent-dark);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+.help-content {
+  padding: 22px 26px;
+  overflow-y: auto;
+  background: #ececec;
+  font-size: 13px;
+  line-height: 1.75;
+  color: #222;
+}
+.help-content h2 {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--accent-dark, #9a7a30);
+  margin-bottom: 10px;
+  padding-bottom: 6px;
+  border-bottom: 2px solid var(--accent, #c9a961);
+}
+.help-content h3 {
+  font-size: 14px;
+  font-weight: 700;
+  color: #333;
+  margin: 14px 0 6px;
+}
+.help-content p { margin: 6px 0; }
+.help-content ul, .help-content ol {
+  padding-left: 22px;
+  margin: 6px 0 12px;
+}
+.help-content li { margin-bottom: 4px; }
+.help-content b, .help-content strong { color: var(--accent-dark, #9a7a30); }
+.help-content kbd {
+  display: inline-block;
+  padding: 2px 6px;
+  background: #333;
+  color: #fff;
+  border: 1px solid #555;
+  border-bottom-width: 2px;
+  border-radius: 3px;
+  font-family: monospace;
+  font-size: 11px;
+  margin: 0 2px;
+}
+.help-tip {
+  margin: 12px 0;
+  padding: 10px 14px;
+  background: rgba(201, 169, 97, 0.15);
+  border-left: 3px solid var(--accent, #c9a961);
+  font-size: 12px;
+  color: #444;
+  border-radius: 0 4px 4px 0;
+}
+.help-tip b { color: var(--accent-dark, #9a7a30); }
+.help-warn {
+  margin: 12px 0;
+  padding: 10px 14px;
+  background: rgba(229, 57, 53, 0.1);
+  border-left: 3px solid #e53935;
+  font-size: 12px;
+  color: #444;
+  border-radius: 0 4px 4px 0;
+}
+.help-step-list {
+  counter-reset: helpstep;
+  list-style: none;
+  padding-left: 0;
+}
+.help-step-list li {
+  counter-increment: helpstep;
+  position: relative;
+  padding: 8px 10px 8px 40px;
+  margin-bottom: 6px;
+  background: #fff;
+  border: 1px solid #bbb;
+  border-radius: 4px;
+}
+.help-step-list li::before {
+  content: counter(helpstep);
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 22px; height: 22px;
+  background: var(--accent, #c9a961);
+  color: #1a1a1a;
+  border-radius: 50%;
+  font-weight: 700;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.help-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 18px;
+  background: #d8d8d8;
+  border-top: 1px solid #999;
+}
+.help-skip {
+  font-size: 11px;
+  color: #555;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+.help-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  background: var(--accent, #c9a961);
+  color: #1a1a1a;
+  font-weight: 700;
+  border-radius: 10px;
+  font-size: 11px;
+  margin-right: 4px;
+}
+.help-badge.baseline { background: #e53935; color: #fff; }
+.help-badge.improv { background: #4caf50; color: #fff; }
+.fg-body {
+  font-size: 12px;
+  line-height: 1.6;
+  color: #e0e0e0;
+}
+.fg-tabs {
+  margin: 6px 0 10px;
+  display: flex;
+  gap: 6px;
+}
+.fg-tab {
+  flex: 1;
+  padding: 6px 10px;
+  font-size: 11px;
+  background: #2a2a2a;
+  color: #aaa;
+  border: 1px solid #444;
+  border-radius: 4px;
+}
+.fg-tab.active {
+  background: var(--accent);
+  color: #1a1a1a;
+  border-color: var(--accent-light);
+  font-weight: 700;
+}
+
+/* ============================================================
+   POPUP (shared)
+   ============================================================ */
+.popup {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  animation: popupIn 0.18s ease-out;
+}
+@keyframes popupIn {
+  from { background: rgba(0,0,0,0); }
+  to   { background: rgba(0,0,0,0.55); }
+}
+.popup-window {
+  background: var(--bg-panel);
+  border: 2px solid var(--border-strong);
+  box-shadow: var(--shadow);
+  animation: windowIn 0.22s ease-out;
+  color: var(--text);
+}
+@keyframes windowIn {
+  from { transform: translateY(14px) scale(0.985); opacity: 0; }
+  to   { transform: none; opacity: 1; }
+}
+.popup-close {
+  width: 28px; height: 28px;
+  background: #b0b0b0;
+  color: #1a1a1a;
+  border: 1px solid #555;
+  border-radius: 4px;
+  font-weight: 700;
+  font-size: 13px;
+}
+.popup-close:hover { background: var(--danger); color: #fff; }
+
+.btn {
+  padding: 8px 18px;
+  border: 1px solid var(--border-strong);
+  border-radius: 4px;
+  font-weight: 600;
+  font-size: 12px;
+  transition: filter 0.12s, transform 0.08s;
+}
+.btn:hover { filter: brightness(1.08); }
+.btn:active { transform: translateY(1px); }
+.btn-primary {
+  background: linear-gradient(180deg, #e9d08e, var(--accent-dark));
+  color: #1a1a1a;
+}
+.btn-ghost {
+  background: #b8b8b8;
+  color: #1a1a1a;
+}
+.btn-big {
+  padding: 12px 24px;
+  font-size: 14px;
+}
+
+/* ============================================================
+   POPUP: GAME MENU
+   ============================================================ */
+.game-menu-window {
+  width: 1820px;
+  height: 820px;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-panel);
+}
+.gm-header {
+  display: flex;
+  align-items: center;
+  padding: 0 14px;
+  background: var(--bg-panel-2);
+  border-top: 1px solid #bbb;
+  border-bottom: 2px solid #777;
+  height: 42px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.2);
+}
+.gm-header-spacer { flex: 1; }
+.gm-header-title {
+  flex: 0 0 auto;
+  background: var(--bg-panel);
+  border: 1px solid #777;
+  border-bottom: none;
+  padding: 6px 48px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #333;
+  border-radius: 4px 4px 0 0;
+  margin-bottom: -2px;
+}
+.gm-header .gm-header-spacer:nth-of-type(2) { flex: 1; display: flex; justify-content: flex-end; }
+
+.gm-body {
+  display: grid;
+  grid-template-columns: 260px 1fr 360px;
+  gap: 0;
+  padding: 0;
+  flex: 1;
+  overflow: hidden;
+}
+
+.gm-character {
+  background: var(--bg-profile);
+  border-right: 1px solid #999;
+  padding: 14px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.gm-gold-obtained {
+  font-size: 11px;
+  color: #444;
+  margin-bottom: 10px;
+  align-self: flex-start;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.gm-gold-obtained::before {
+  content: "✔";
+  color: #4caf50;
+  font-size: 12px;
+  font-weight: 700;
+}
+.gm-portrait {
+  width: 200px; height: 280px;
+  background: #9a9a9a;
+  border: 1px solid #777;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+.gm-portrait-img {
+  font-size: 100px;
+  opacity: 0.35;
+  color: #666;
+  filter: grayscale(1);
+}
+.gm-character-info {
+  text-align: center;
+  margin-bottom: 10px;
+  width: 100%;
+}
+.gm-char-level {
+  font-size: 12px;
+  margin-bottom: 3px;
+  color: #333;
+}
+.gm-char-gold {
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--accent-dark);
+}
+.gm-swap-char {
+  width: 100%;
+  padding: 10px 12px;
+  background: #555;
+  border: 1px solid #333;
+  font-size: 11px;
+  font-weight: 600;
+  color: #fff;
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.gm-swap-char::before {
+  content: "👤";
+  font-size: 13px;
+}
+.gm-swap-char:hover { background: #444; }
+
+.gm-content-grid {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+}
+.gm-col {
+  flex: 1;
+  background: var(--bg-panel);
+  border-right: 1px solid #fff;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.gm-col:last-child { border-right: none; }
+.gm-col-head {
+  background: var(--bg-panel-2);
+  padding: 10px 6px 8px;
+  text-align: center;
+  font-weight: 700;
+  font-size: 12px;
+  color: #333;
+  border-bottom: 1px solid #888;
+  border-top: 1px solid rgba(255,255,255,0.3);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.gm-col-icon {
+  font-size: 26px;
+  line-height: 1;
+}
+.gm-col-list {
+  list-style: none;
+  flex: 1;
+  padding: 6px 5px;
+  overflow-y: auto;
+}
+.gm-col-list li {
+  font-size: 11px;
+  padding: 5px 6px;
+  margin-bottom: 2px;
+  background: transparent;
+  border: none;
+  border-radius: 2px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #444;
+  cursor: default;
+  transition: background 0.1s;
+}
+.gm-col-list li:hover {
+  background: rgba(0,0,0,0.06);
+}
+.gm-col-list li::before {
+  content: "⌖";
+  color: #888;
+  font-size: 11px;
+  flex-shrink: 0;
+}
+.gm-col-foot {
+  padding: 6px;
+  text-align: center;
+  border-top: 1px solid #aaa;
+  font-size: 14px;
+  background: rgba(0,0,0,0.04);
+}
+
+.gm-shortcuts {
+  background: var(--bg-panel-3);
+  border-left: 1px solid #999;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+.gm-shortcuts::-webkit-scrollbar { width: 6px; }
+.gm-shortcuts::-webkit-scrollbar-track { background: #c0c0c0; }
+.gm-shortcuts::-webkit-scrollbar-thumb { background: #888; border-radius: 3px; }
+.gm-sc-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #aaa;
+}
+.gm-sc-char {
+  font-weight: 700;
+  font-size: 12px;
+  color: #333;
+}
+.gm-sc-settings {
+  font-size: 10px;
+  padding: 5px 12px;
+  background: var(--accent);
+  color: #1a1a1a;
+  border: 1px solid var(--accent-dark);
+  border-radius: 3px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.gm-sc-settings:hover { filter: brightness(1.1); }
+.gm-sc-gear {
+  width: 26px; height: 26px;
+  background: #bbb;
+  border: 1px solid #999;
+  border-radius: 3px;
+  font-size: 14px;
+  color: #444;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.gm-sc-gear:hover { background: #aaa; }
+
+.gm-sc-limit {
+  font-size: 11px;
+  font-weight: 700;
+  color: #333;
+  padding-bottom: 4px;
+  border-bottom: 2px solid #333;
+  margin-bottom: 6px;
+}
+.gm-sc-section {
+  margin-top: 14px;
+  margin-bottom: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #333;
+  padding-bottom: 4px;
+  border-bottom: 2px solid #333;
+}
+.gm-sc-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 8px;
+  font-size: 11px;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid #bbb;
+  border-radius: 0;
+  margin-bottom: 0;
+  color: #444;
+}
+.gm-sc-row.limit-row {
+  background: rgba(201, 169, 97, 0.12);
+  border-bottom: 1px solid #bbb;
+}
+.gm-sc-row.cleared-row {
+  opacity: 0.4;
+  color: #888;
+}
+.gm-sc-row-clickable {
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+.gm-sc-row-clickable:not(.cleared-row):hover {
+  background: rgba(201, 169, 97, 0.18);
+  color: #222;
+}
+.gm-sc-custom-header {
+  padding: 6px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--accent-dark, #c9a961);
+  background: rgba(201, 169, 97, 0.12);
+  border-bottom: 1px solid #bbb;
+  margin-bottom: 2px;
+}
+.gm-sc-custom-header b { color: #222; margin: 0 2px; }
+.limit-count { font-weight: 700; color: var(--text-dim); }
+
+.gm-shortcut-list {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.gm-shortcut-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  font-size: 11px;
+  border: 1px solid #aaa;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.14s;
+  background: linear-gradient(180deg, #e8d08e, #c9a961);
+}
+.gm-shortcut-item:hover {
+  background: linear-gradient(180deg, #f2dd9f, #d5b778);
+  transform: translateX(-1px);
+}
+.gm-shortcut-item .sc-name { font-weight: 700; display: flex; align-items: center; gap: 6px; }
+.gm-shortcut-item .sc-status {
+  font-size: 10px;
+  padding: 3px 8px;
+  border-radius: 10px;
+  background: #4caf50;
+  color: #fff;
+  font-weight: 700;
+}
+.gm-shortcut-item.cleared {
+  background: #cfcfcf;
+  color: #777;
+  cursor: not-allowed;
+  pointer-events: none;
+  filter: grayscale(1);
+}
+.gm-shortcut-item.cleared .sc-status {
+  background: #888;
+}
+.gm-shortcut-item.empty-state {
+  display: block;
+  text-align: center;
+  padding: 22px 10px;
+  background: #e4e4e4;
+  color: #666;
+  cursor: default;
+  pointer-events: none;
+}
+.gm-shortcut-empty-cta {
+  margin-top: 8px;
+  padding: 10px;
+  background: var(--accent);
+  color: #1a1a1a;
+  border: 1px solid var(--accent-dark);
+  border-radius: 4px;
+  font-weight: 700;
+  font-size: 11px;
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.gm-footer {
+  display: flex;
+  justify-content: space-evenly;
+  align-items: stretch;
+  padding: 6px 10px;
+  background: var(--bg-profile);
+  border-top: 2px solid #888;
+}
+.gm-fn {
+  flex: 1;
+  padding: 8px 4px 6px;
+  font-size: 10px;
+  text-align: center;
+  line-height: 1.3;
+  color: #333;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  border-radius: 3px;
+  transition: background 0.1s;
+}
+.gm-fn:hover { background: rgba(0,0,0,0.1); }
+.gm-fn-icon { font-size: 20px; margin-bottom: 1px; }
+
+/* ============================================================
+   POPUP: SHORTCUT SETTINGS
+   ============================================================ */
+.shortcut-settings-window {
+  width: 560px;
+  max-width: 92vw;
+  padding: 18px;
+}
+.ss-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-weight: 700;
+  font-size: 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 10px;
+}
+.ss-desc {
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--text-dim);
+  margin-bottom: 12px;
+}
+.ss-note { color: var(--accent-dark); font-size: 11px; }
+.ss-list {
+  max-height: 360px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  background: #ececec;
+  padding: 8px;
+}
+.ss-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  margin-bottom: 4px;
+  background: #fff;
+  border: 1px solid #bbb;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 12px;
+}
+.ss-item:hover { background: #fffaf0; }
+.ss-item input { accent-color: var(--accent-dark); }
+.ss-item .ss-ilvl { margin-left: auto; color: var(--text-dim); font-weight: 700; }
+.ss-item .ss-diff { padding: 2px 6px; background: #333; color: #fff; border-radius: 2px; font-size: 10px; }
+.ss-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+/* ============================================================
+   POPUP: STATUS VIEW SETTINGS (⚙ 현황 보기 설정)
+   ============================================================ */
+.status-settings-window {
+  width: 520px;
+  max-width: 92vw;
+  padding: 18px;
+  background: var(--bg-panel, #C8C8C8);
+  color: #333;
+}
+.stset-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-weight: 700;
+  font-size: 15px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid #333;
+  margin-bottom: 14px;
+}
+.stset-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-height: 520px;
+  overflow-y: auto;
+}
+.stset-section {
+  background: #D3D3D3;
+  border: 1px solid #999;
+  padding: 10px 12px;
+}
+.stset-section-title {
+  font-weight: 700;
+  font-size: 13px;
+  color: #222;
+  padding-bottom: 6px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid #999;
+}
+.stset-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 2px;
+  font-size: 12px;
+  cursor: pointer;
+}
+.stset-row input[type="checkbox"] { accent-color: var(--accent-dark, #c9a961); }
+.stset-row-action {
+  justify-content: space-between;
+  cursor: default;
+  font-weight: 600;
+}
+.stset-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 14px;
+  padding-top: 10px;
+  border-top: 1px solid #999;
+}
+
+/* ============================================================
+   POPUP: FAVORITE SETTINGS (⭐ 개별 설정 — star toggles)
+   ============================================================ */
+.favorite-settings-window {
+  width: 580px;
+  max-width: 92vw;
+  padding: 18px;
+  background: var(--bg-panel, #C8C8C8);
+  color: #333;
+}
+.fav-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-weight: 700;
+  font-size: 15px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #333;
+  margin-bottom: 10px;
+}
+.fav-subhead {
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+.fav-subhead b { color: var(--accent-dark, #c9a961); font-size: 14px; }
+.fav-desc {
+  font-size: 12px;
+  line-height: 1.55;
+  color: #555;
+  margin-bottom: 12px;
+}
+.fav-note { color: var(--accent-dark, #c9a961); font-size: 11px; }
+.fav-list {
+  max-height: 380px;
+  overflow-y: auto;
+  background: #ececec;
+  border: 1px solid #999;
+  padding: 6px;
+}
+.fav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  margin-bottom: 4px;
+  background: #fff;
+  border: 1px solid #bbb;
+  border-radius: 3px;
+  font-size: 12px;
+  transition: background 0.15s, border-color 0.15s;
+}
+.fav-item.selected {
+  background: #fffaf0;
+  border-color: var(--accent-dark, #c9a961);
+  box-shadow: 0 0 0 1px var(--accent-dark, #c9a961) inset;
+}
+.fav-star {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 20px;
+  line-height: 1;
+  padding: 0 4px;
+  color: #999;
+  transition: transform 0.1s;
+}
+.fav-item.selected .fav-star { color: var(--accent-dark, #c9a961); }
+.fav-star:hover { transform: scale(1.15); }
+.fav-icon { font-size: 16px; }
+.fav-name { flex: 1; }
+.fav-diff {
+  padding: 2px 6px;
+  background: #333;
+  color: #fff;
+  border-radius: 2px;
+  font-size: 10px;
+}
+.fav-ilvl {
+  color: #666;
+  font-weight: 700;
+  min-width: 60px;
+  text-align: right;
+}
+.fav-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 14px;
+  padding-top: 10px;
+  border-top: 1px solid #999;
+}
+
+/* ============================================================
+   POPUP: CONTENT GUIDE
+   ============================================================ */
+.content-guide-window {
+  width: 1000px;
+  max-width: 96vw;
+  display: flex;
+  flex-direction: column;
+}
+.cg-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px;
+  background: #b0b0b0;
+  border-bottom: 1px solid var(--border);
+}
+.cg-topbar-title { font-size: 13px; font-weight: 700; }
+.cg-topbar .popup-close {
+  width: auto;
+  padding: 4px 12px;
+}
+.cg-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-panel-3);
+}
+.cg-title { font-size: 20px; font-weight: 700; }
+.cg-header-right { display: flex; align-items: center; gap: 10px; }
+.cg-ilvl {
+  font-size: 11px;
+  color: var(--text-dim);
+  background: #fff;
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+}
+.cg-ilvl b { color: var(--accent-dark); }
+.cg-other-btn {
+  padding: 6px 12px;
+  background: #b5b5b5;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.cg-body {
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  gap: 16px;
+  padding: 16px;
+  min-height: 420px;
+}
+.cg-left { display: flex; flex-direction: column; }
+.cg-section-label {
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 6px;
+  color: #333;
+}
+/* Carousel wrapper */
+.cg-carousel {
+  display: flex;
+  align-items: stretch;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+.cg-arrow {
+  flex: 0 0 32px;
+  background: #c0c0c0;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 14px;
+  color: #333;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.12s;
+}
+.cg-arrow:hover { background: var(--accent-light); }
+.cg-arrow:active { background: var(--accent); }
+
+.cg-carousel-viewport {
+  flex: 1;
+  overflow: hidden;
+  min-width: 0;
+}
+.cg-carousel-track {
+  display: flex;
+  gap: 8px;
+  transition: transform 0.3s ease;
+}
+.cg-carousel-track .cg-card {
+  flex: 0 0 calc((100% - 16px) / 3);  /* show 3 at a time */
+  min-width: 0;
+}
+#cg-core-row .cg-card {
+  flex: 0 0 calc((100% - 24px) / 4);  /* show 4 at a time */
+}
+.cg-card {
+  background: #ececec;
+  border: 2px solid #a0a0a0;
+  padding: 6px 6px 8px;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.14s;
+}
+.cg-card:hover {
+  border-color: var(--accent);
+  background: #fffaf0;
+}
+.cg-card.selected {
+  border-color: var(--accent-dark);
+  background: #fff3d5;
+  box-shadow: 0 0 0 2px var(--accent);
+}
+.cg-card.cleared::before {
+  content: "✓";
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 60px;
+  color: rgba(76, 175, 80, 0.85);
+  font-weight: 700;
+  text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+  z-index: 2;
+}
+.cg-card.cleared .cg-card-illust { filter: grayscale(1) brightness(0.9); }
+.cg-card.ilvl-low::after {
+  content: "🔒 아이템 레벨 미달";
+  position: absolute;
+  bottom: 4px;
+  left: 4px; right: 4px;
+  padding: 2px;
+  font-size: 9px;
+  text-align: center;
+  background: rgba(229, 57, 53, 0.85);
+  color: #fff;
+  border-radius: 2px;
+}
+.cg-card-illust {
+  width: 100%;
+  aspect-ratio: 1 / 1.3;
+  background: linear-gradient(180deg, #c0c0c0, #8a8a8a);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 42px;
+  color: #fff;
+  text-shadow: 0 2px 6px rgba(0,0,0,0.5);
+  margin-bottom: 4px;
+}
+.cg-card.gold-type .cg-card-illust { background: linear-gradient(180deg, #e9d08e, #9a7a30); }
+.cg-card.bound-type .cg-card-illust { background: linear-gradient(180deg, #a574e8, #5a2d99); }
+.cg-card-name {
+  font-size: 10px;
+  font-weight: 700;
+  text-align: center;
+}
+.cg-card-ilvl {
+  font-size: 9px;
+  text-align: center;
+  color: var(--text-dim);
+  margin-top: 1px;
+}
+.cg-note {
+  margin-top: auto;
+  font-size: 10px;
+  color: #777;
+  text-align: center;
+  padding: 6px;
+  background: #ececec;
+  border: 1px solid #bbb;
+}
+
+.cg-right {
+  display: flex;
+  flex-direction: column;
+}
+.cg-filter-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  margin-bottom: 8px;
+  position: relative;
+  gap: 6px;
+}
+.cg-filter-btn {
+  padding: 6px 14px;
+  background: #fff;
+  border: 1px solid var(--border-strong);
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.cg-filter-btn:hover { background: var(--accent-light); }
+.cg-filter-menu {
+  list-style: none;
+  position: absolute;
+  top: 110%;
+  right: 0;
+  background: #fff;
+  border: 1px solid var(--border-strong);
+  min-width: 160px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.35);
+  z-index: 10;
+}
+.cg-filter-menu li {
+  padding: 8px 12px;
+  font-size: 11px;
+  cursor: pointer;
+}
+.cg-filter-menu li:hover { background: var(--accent-light); }
+.cg-filter-menu li.active { background: var(--accent); color: #1a1a1a; font-weight: 700; }
+
+.cg-detail {
+  flex: 1;
+  background: #ececec;
+  border: 1px solid var(--border);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+}
+.cg-detail-illust {
+  width: 100%;
+  height: 160px;
+  background: linear-gradient(180deg, #bdbdbd, #7c7c7c);
+  border: 1px solid var(--border);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  text-shadow: 0 2px 6px rgba(0,0,0,0.4);
+  font-size: 13px;
+  font-weight: 700;
+}
+.cg-detail-illust.gold-type { background: linear-gradient(180deg, #e9d08e, #9a7a30); }
+.cg-detail-illust.bound-type { background: linear-gradient(180deg, #a574e8, #5a2d99); }
+.cg-detail-info { display: flex; flex-direction: column; flex: 1; }
+.cg-detail-name {
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 6px;
+  color: #222;
+}
+.cg-detail-desc {
+  font-size: 11px;
+  line-height: 1.6;
+  color: var(--text-dim);
+  flex: 1;
+  margin-bottom: 10px;
+}
+.cg-shortcut-btn {
+  padding: 10px;
+  background: linear-gradient(180deg, #e9d08e, #9a7a30);
+  color: #1a1a1a;
+  font-weight: 700;
+  font-size: 13px;
+  border: 1px solid var(--accent-dark);
+  border-radius: 4px;
+  letter-spacing: 1px;
+}
+.cg-shortcut-btn:disabled {
+  background: #cfcfcf;
+  color: #888;
+  cursor: not-allowed;
+  border-color: #999;
+}
+
+/* ============================================================
+   POPUP: CONTENT DETAIL (raid popup)
+   ============================================================ */
+.content-detail-window {
+  width: 1600px;
+  position: relative;
+}
+.cd-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 10px 10px 0;
+  background: var(--bg-panel-2);
+}
+.cd-tab {
+  flex: 1;
+  padding: 8px 10px;
+  background: #b5b5b5;
+  border: 1px solid #8a8a8a;
+  border-bottom: none;
+  font-size: 11px;
+  font-weight: 600;
+  text-align: center;
+  cursor: pointer;
+  border-radius: 4px 4px 0 0;
+}
+.cd-tab.active {
+  background: var(--bg-panel);
+  color: var(--accent-dark);
+  border-color: var(--border-strong);
+  border-bottom: 2px solid var(--bg-panel);
+  margin-bottom: -1px;
+  font-weight: 700;
+}
+.cd-tab small { font-size: 9px; color: var(--text-dim); display: block; }
+.cd-tab.active small { color: var(--accent-dark); }
+
+.cd-close {
+  position: absolute;
+  top: 12px; right: 12px;
+  z-index: 2;
+}
+
+.cd-body {
+  display: grid;
+  grid-template-columns: 260px 1fr 330px;
+  gap: 14px;
+  padding: 18px;
+}
+.cd-left {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.cd-union {
+  background: #ececec;
+  border: 1px solid var(--border);
+  padding: 12px 10px;
+  text-align: center;
+}
+.cd-union-crest { font-size: 46px; margin-bottom: 4px; }
+.cd-union-title { font-weight: 700; font-size: 12px; }
+.cd-union-desc { font-size: 10px; color: var(--text-dim); margin: 6px 0; }
+.cd-union-badges {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 6px;
+}
+.cd-badge {
+  width: 30px; height: 30px;
+  background: #d0d0d0;
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+}
+.cd-members {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+}
+.cd-member {
+  aspect-ratio: 1;
+  background: #d0d0d0;
+  border: 1px solid var(--border);
+  font-size: 9px;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cd-center {
+  background: #ececec;
+  border: 1px solid var(--border);
+  padding: 14px;
+  position: relative;
+}
+.cd-gate-count {
+  position: absolute;
+  top: 14px; left: 14px;
+  background: #b5b5b5;
+  border: 1px solid var(--border);
+  padding: 6px 10px;
+  font-size: 10px;
+  text-align: center;
+  font-weight: 700;
+}
+.cd-image {
+  width: 100%;
+  height: 240px;
+  background: linear-gradient(180deg, #9a9a9a, #5a5a5a);
+  border: 1px solid var(--border-strong);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  text-shadow: 0 2px 6px rgba(0,0,0,0.5);
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 14px;
+}
+.cd-image.gold-type { background: linear-gradient(180deg, #e9d08e, #9a7a30); }
+.cd-image.bound-type { background: linear-gradient(180deg, #a574e8, #5a2d99); }
+.cd-story-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-dim);
+}
+.cd-story-title {
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+.cd-story-desc {
+  font-size: 11px;
+  line-height: 1.6;
+  color: var(--text-dim);
+  margin-bottom: 12px;
+}
+.cd-gold-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  border-top: 1px solid #bbb;
+}
+.cd-arrow {
+  width: 22px; height: 22px;
+  background: #b5b5b5;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+}
+.cd-gold-label { font-size: 11px; font-weight: 700; }
+.cd-gold-coins {
+  flex: 1;
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  justify-content: center;
+}
+.cd-coin {
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 35%, #f5e088, #9a7a30);
+  border: 1px solid #6a5220;
+  font-size: 10px;
+  color: #5a4020;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.cd-coin.bound {
+  background: radial-gradient(circle at 40% 35%, #d1a5ff, #5a2d99);
+  border-color: #3a1d60;
+  color: #fff;
+}
+
+.cd-right {
+  background: #ececec;
+  border: 1px solid var(--border);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+}
+.cd-diff-label, .cd-limit-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-dim);
+  margin-bottom: 6px;
+}
+.cd-diff-row {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.cd-diff {
+  flex: 1;
+  padding: 8px 6px;
+  background: #d4d4d4;
+  border: 1px solid var(--border);
+  text-align: center;
+}
+.cd-diff-icon { font-size: 20px; }
+.cd-diff-name { font-size: 11px; font-weight: 700; }
+.cd-diff.active {
+  background: linear-gradient(180deg, #e9d08e, #c9a961);
+  border-color: var(--accent-dark);
+}
+.cd-ilvl-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 10px;
+  background: #fff;
+  border: 1px solid var(--border);
+  font-size: 11px;
+  margin-bottom: 12px;
+}
+.cd-ilvl-row b { color: var(--accent-dark); }
+.cd-limit-row {
+  padding: 4px 0;
+  font-size: 11px;
+}
+.cd-limit-row label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+.cd-actions {
+  margin-top: auto;
+  padding-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.cd-actions .btn { width: 100%; text-align: center; }
+.cd-actions .btn-primary { padding: 12px; font-size: 13px; }
+
+/* ============================================================
+   POPUP: PARTY FINDER
+   ============================================================ */
+.party-finder-window {
+  width: 1180px;
+  height: 820px;
+  display: flex;
+  flex-direction: column;
+}
+.pf-header {
+  background: #b5b5b5;
+  padding: 8px 12px;
+  font-weight: 700;
+  font-size: 14px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.pf-body {
+  display: grid;
+  grid-template-columns: 200px 1fr 320px;
+  gap: 10px;
+  padding: 10px;
+  flex: 1;
+  overflow: hidden;
+  min-height: 0; /* allow children to shrink for scroll */
+}
+
+.pf-nav {
+  background: var(--bg-panel-3);
+  border: 1px solid var(--border);
+  padding: 4px;
+  overflow-y: auto;
+  min-height: 0;
+  scrollbar-width: thin;
+}
+.pf-nav::-webkit-scrollbar { width: 6px; }
+.pf-nav::-webkit-scrollbar-thumb { background: #aaa; border-radius: 3px; }
+.pf-nav-item {
+  padding: 8px 10px;
+  background: #dcdcdc;
+  border: 1px solid #aaa;
+  margin-bottom: 3px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.pf-nav-item:hover { background: #fffaf0; }
+.pf-nav-item.open { background: var(--accent-light); }
+.pf-nav-item.selected-parent {
+  background: var(--accent-light);
+  border-color: var(--accent-dark);
+}
+.pf-nav-sub {
+  padding: 6px 10px 6px 26px;
+  background: #e6e6e6;
+  border: 1px solid #aaa;
+  border-left: 3px solid var(--accent);
+  margin-bottom: 3px;
+  font-size: 10px;
+  cursor: pointer;
+  transition: all 0.12s;
+}
+.pf-nav-sub:hover { background: #fff3d5; }
+.pf-nav-sub.selected {
+  background: var(--accent);
+  color: #1a1a1a;
+  font-weight: 700;
+  border-left-color: var(--accent-dark);
+}
+
+.pf-center {
+  background: var(--bg-panel-3);
+  border: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+.pf-filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px;
+  border-bottom: 1px solid var(--border);
+  background: #d8d8d8;
+}
+.pf-chip {
+  padding: 6px 12px;
+  background: #fff;
+  border: 1px solid var(--border);
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 2px;
+}
+.pf-chip.primary {
+  background: linear-gradient(180deg, #e9d08e, #c9a961);
+  border-color: var(--accent-dark);
+}
+.pf-chip:hover { filter: brightness(1.06); }
+.pf-search {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  background: #fff;
+  border: 1px solid var(--border);
+  padding: 0 8px;
+  min-width: 180px;
+}
+.pf-search input {
+  flex: 1;
+  border: none;
+  outline: none;
+  padding: 6px 0;
+  font-family: inherit;
+  font-size: 11px;
+  background: transparent;
+}
+.pf-search button {
+  padding: 2px 6px;
+  font-size: 14px;
+}
+
+.pf-list-head {
+  display: grid;
+  grid-template-columns: 120px 1fr 80px;
+  padding: 8px 12px;
+  background: #c8c8c8;
+  border-bottom: 1px solid var(--border);
+  font-size: 11px;
+  font-weight: 700;
+  text-align: center;
+}
+.pf-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 4px;
+  min-height: 0;
+  scrollbar-width: thin;
+}
+.pf-list::-webkit-scrollbar { width: 6px; }
+.pf-list::-webkit-scrollbar-thumb { background: #aaa; border-radius: 3px; }
+.pf-party-item {
+  display: grid;
+  grid-template-columns: 120px 1fr 80px;
+  padding: 12px;
+  margin-bottom: 4px;
+  background: #fff;
+  border: 1px solid #bbb;
+  cursor: pointer;
+  font-size: 11px;
+  align-items: center;
+  transition: all 0.12s;
+}
+.pf-party-item:hover { background: #fff3d5; border-color: var(--accent); }
+.pf-party-item.selected {
+  background: var(--accent-light);
+  border-color: var(--accent-dark);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+.pf-party-item.locked { background: #e8e8e8; color: #999; }
+.pf-party-target {
+  text-align: center;
+  font-weight: 700;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+.pf-party-title { padding: 0 12px; }
+.pf-party-title b { display: block; font-size: 12px; margin-bottom: 2px; }
+.pf-party-title span { font-size: 10px; color: var(--text-dim); }
+.pf-party-count {
+  text-align: center;
+  font-weight: 700;
+  color: var(--accent-dark);
+}
+
+.pf-empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #888;
+  font-size: 12px;
+  padding: 40px 20px;
+  text-align: center;
+}
+.pf-empty-icon { font-size: 40px; margin-bottom: 10px; }
+
+.pf-detail {
+  background: var(--bg-panel-3);
+  border: 1px solid var(--border);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  min-height: 0;
+  scrollbar-width: thin;
+}
+.pf-detail::-webkit-scrollbar { width: 6px; }
+.pf-detail::-webkit-scrollbar-thumb { background: #aaa; border-radius: 3px; }
+.pf-detail-head {
+  font-weight: 700;
+  font-size: 12px;
+  text-align: center;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+}
+.pf-detail-sub {
+  text-align: center;
+  font-size: 11px;
+  color: var(--text-dim);
+  padding: 6px 0 10px;
+}
+.pf-detail-gates { display: flex; flex-direction: column; gap: 4px; }
+.pf-gate-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--accent-dark);
+  margin-top: 4px;
+}
+.pf-gate-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+}
+.pf-slot {
+  background: #fff;
+  border: 1px solid var(--border);
+  padding: 8px;
+  font-size: 10px;
+  text-align: center;
+  line-height: 1.5;
+}
+.pf-slot b { font-size: 13px; color: var(--accent-dark); display: block; }
+.pf-slot-name { font-size: 9px; color: var(--text-dim); }
+.pf-slot.empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #888;
+  min-height: 56px;
+  background: #e0e0e0;
+  border-style: dashed;
+}
+
+.pf-apply {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+  text-align: center;
+}
+.pf-apply-desc {
+  font-size: 10px;
+  color: var(--text-dim);
+  margin-bottom: 10px;
+  line-height: 1.6;
+}
+.pf-apply .btn { width: 100%; }
+
+/* ============================================================
+   FEATURE NOTICES (disabled feature indicator)
+   ============================================================ */
+.feature-notice {
+  margin-top: 8px;
+  padding: 8px 10px;
+  background: rgba(0, 0, 0, 0.06);
+  border: 1px dashed #999;
+  border-radius: 4px;
+  font-size: 10px;
+  color: #888;
+  text-align: center;
+  line-height: 1.5;
+}
+.cg-filter-notice {
+  flex-basis: 100%;
+  margin-top: 4px;
+}
+
+/* Scenario-driven CSS toggles:
+   - Filter dropdown: hidden in 기존안, 개선안1
+   - Filter button: dimmed when disabled */
+body[data-scenario="asIs"] .cg-filter-btn,
+body[data-scenario="improv1"] .cg-filter-btn {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+body[data-scenario="asIs"] .cg-filter-menu,
+body[data-scenario="improv1"] .cg-filter-menu {
+  display: none !important;
+}
+
+/* ============================================================
+   TOAST
+   ============================================================ */
+#toast-container {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 200;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+}
+.toast {
+  padding: 14px 24px;
+  background: rgba(0, 0, 0, 0.86);
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+  animation: toastIn 0.25s ease-out;
+}
+.toast.success { border-color: #4caf50; }
+.toast.danger { border-color: #e53935; }
+@keyframes toastIn {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* ============================================================
+   DEPTH COUNTER — COMPLETION BANNER
+   ============================================================ */
+.depth-complete {
+  margin-top: 12px;
+  padding: 12px 10px;
+  background: rgba(76, 175, 80, 0.15);
+  border: 1px solid #4caf50;
+  border-radius: 6px;
+  text-align: center;
+  animation: completePulse 0.4s ease-out;
+}
+@keyframes completePulse {
+  0% { transform: scale(0.92); opacity: 0; }
+  60% { transform: scale(1.03); }
+  100% { transform: scale(1); opacity: 1; }
+}
+.complete-icon { font-size: 28px; margin-bottom: 4px; }
+.complete-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #4caf50;
+  margin-bottom: 4px;
+}
+.complete-clicks {
+  font-size: 11px;
+  color: #e0e0e0;
+  margin-bottom: 6px;
+}
+.complete-clicks b {
+  font-size: 18px;
+  color: #fff;
+}
+.complete-compare {
+  font-size: 10px;
+  color: #c9a961;
+  line-height: 1.5;
+  margin-bottom: 8px;
+}
+.complete-compare .saving-pct {
+  display: inline-block;
+  padding: 2px 8px;
+  background: #4caf50;
+  color: #fff;
+  font-weight: 700;
+  border-radius: 10px;
+  font-size: 11px;
+}
+.complete-reset {
+  width: 100%;
+  padding: 8px;
+  font-size: 11px;
+}
+
+/* ============================================================
+   COMPLETION OVERLAY (full-screen comparison popup)
+   ============================================================ */
+.completion-window {
+  width: 520px;
+  padding: 0;
+  text-align: center;
+  border-radius: 10px;
+  overflow: hidden;
+}
+.comp-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  background: linear-gradient(135deg, #2a2a2a, #1a1a1a);
+  color: #e9d08e;
+  font-size: 16px;
+  font-weight: 700;
+  border-bottom: 2px solid var(--accent);
+}
+.comp-body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  padding: 28px 20px 16px;
+  background: #f5f5f5;
+}
+.comp-result {
+  flex: 1;
+  padding: 18px 12px;
+  background: #fff;
+  border: 2px solid var(--accent);
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+.comp-result-baseline {
+  border-color: #e53935;
+  opacity: 0.7;
+}
+.comp-result-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-dim);
+  margin-bottom: 6px;
+}
+.comp-result-clicks {
+  font-size: 48px;
+  font-weight: 700;
+  color: var(--accent-dark);
+  line-height: 1;
+}
+.comp-result-baseline .comp-result-clicks {
+  color: #e53935;
+}
+.comp-result-unit {
+  font-size: 13px;
+  color: var(--text-dim);
+  font-weight: 600;
+  margin-top: 2px;
+}
+.comp-vs {
+  font-size: 20px;
+  font-weight: 700;
+  color: #999;
+}
+.comp-saving {
+  padding: 12px 20px 18px;
+  background: #f5f5f5;
+  font-size: 14px;
+  line-height: 1.8;
+  color: var(--text);
+}
+.comp-saving .saving-highlight {
+  display: inline-block;
+  padding: 4px 14px;
+  background: linear-gradient(135deg, #4caf50, #2e7d32);
+  color: #fff;
+  font-weight: 700;
+  font-size: 16px;
+  border-radius: 20px;
+  margin: 4px 0;
+}
+.comp-saving .saving-detail {
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-top: 4px;
+}
+.comp-actions {
+  display: flex;
+  gap: 8px;
+  padding: 14px 20px;
+  background: #ececec;
+  border-top: 1px solid var(--border);
+}
+.comp-actions .btn { flex: 1; padding: 10px; font-size: 12px; }
+
+</style>
+</head>
+<body>
+  <!-- ============================================================
+       GAME WORLD (Main Screen)
+       ============================================================ -->
+  <div id="game-world">
+    <!-- HUD: Mini-map -->
+    <div class="minimap">
+      <div class="minimap-label">미니맵</div>
+    </div>
+
+    <!-- HUD: Widget bar (quick slots) -->
+    <div class="widget-bar">
+      <div class="widget-slots" id="widget-slots">
+        <button class="widget-btn" data-widget-id="w1" data-tip="위젯">위젯</button>
+        <button class="widget-btn" data-widget-id="party" data-tip="파티 찾기" id="btn-open-party">파티</button>
+        <button class="widget-btn" data-widget-id="w2" data-tip="위젯">위젯</button>
+        <button class="widget-btn" data-widget-id="w3" data-tip="위젯">위젯</button>
+        <button class="widget-btn" data-widget-id="w4" data-tip="위젯">위젯</button>
+        <button class="widget-btn" data-widget-id="w5" data-tip="위젯">위젯</button>
+        <button class="widget-btn" data-widget-id="w6" data-tip="위젯">위젯</button>
+      </div>
+      <button class="widget-btn hamburger" id="btn-widget-settings" data-tip="위젯 순서 설정">≡</button>
+    </div>
+
+    <!-- Widget order settings panel -->
+    <div class="widget-order-panel hidden" id="widget-order-panel">
+      <div class="wo-header">
+        <span>⚙ 위젯 순서 설정</span>
+        <button class="wo-close" id="wo-close">✕</button>
+      </div>
+      <div class="wo-list" id="wo-list">
+        <!-- filled by JS -->
+      </div>
+      <div class="wo-footer">
+        <button class="btn btn-ghost btn-sm" id="wo-reset-order">기본값 복원</button>
+        <button class="btn btn-primary btn-sm" id="wo-apply-order">적용</button>
+      </div>
+    </div>
+
+    <!-- Player character -->
+    <div class="player">
+      <div class="player-head"></div>
+      <div class="player-body">Player</div>
+    </div>
+
+    <!-- Ambient labels -->
+    <div class="main-screen-label">메인 화면</div>
+
+    <!-- Keyboard hint (clickable) -->
+    <div class="kb-hint">
+      <button class="kb-btn" id="kb-game-menu">
+        <kbd>ESC</kbd>
+        <span>게임 메뉴</span>
+      </button>
+      <div class="kb-divider">·</div>
+      <button class="kb-btn" id="kb-content-guide">
+        <kbd>Alt</kbd>+<kbd>Q</kbd>
+        <span>콘텐츠 길잡이</span>
+      </button>
+      <div class="kb-divider">·</div>
+      <button class="kb-btn" id="kb-reset">
+        <kbd>R</kbd>
+        <span>리셋</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       STEP COUNTER (Proposal demonstration)
+       ============================================================ -->
+  <div id="depth-counter">
+    <div class="depth-title">Interaction Cost</div>
+    <div class="depth-scenario-name" id="depth-scenario-name">기존안</div>
+    <div class="depth-meter">
+      <span class="depth-current" id="depth-current">0</span>
+      <span class="depth-unit">클릭</span>
+      <span class="depth-slash">/</span>
+      <span class="depth-max" id="depth-max">6</span>
+    </div>
+    <div class="depth-bar"><div class="depth-fill" id="depth-fill"></div></div>
+    <div class="depth-label" id="depth-label">대기 중</div>
+
+    <!-- Per-step situation list -->
+    <div class="step-situation" id="step-situation">
+      <!-- filled by JS based on active scenario -->
+    </div>
+
+    <!-- Completion banner (shown when all steps done) -->
+    <div class="depth-complete hidden" id="depth-complete">
+      <div class="complete-icon">🎯</div>
+      <div class="complete-title">타겟 화면 도달 완료!</div>
+      <div class="complete-clicks">
+        총 <b id="complete-click-count">0</b>회 클릭
+      </div>
+      <div class="complete-compare" id="complete-compare">
+        <!-- comparison filled by JS -->
+      </div>
+      <button class="btn btn-primary complete-reset" id="btn-reset">처음부터 다시하기</button>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       FLOW GUIDE (tutorial overlay)
+       ============================================================ -->
+  <!-- Floating 사용법 button (outside flow-guide) -->
+  <button class="help-fab" id="btn-open-help" title="사용법 안내">
+    <span class="help-fab-icon">📖</span>
+    <span class="help-fab-text">사용법</span>
+  </button>
+
+  <div id="flow-guide">
+    <div class="fg-title">🎯 코어 콘텐츠 진입 플로우 프로토타입</div>
+    <div class="fg-tabs">
+      <button class="fg-tab" data-scenario="asIs">기존안</button>
+      <button class="fg-tab active" data-scenario="improv1">개선안 1</button>
+      <button class="fg-tab" data-scenario="improv2">개선안 2</button>
+    </div>
+    <div class="fg-body" id="fg-body">
+      <!-- filled by JS based on scenario -->
+    </div>
+  </div>
+
+  <!-- ============================================================
+       POPUP: HELP / 사용법 안내 (first-time user guide)
+       ============================================================ -->
+  <div id="popup-help" class="popup hidden">
+    <div class="popup-window help-window">
+      <div class="help-header">
+        <span>📖 프로토타입 사용법 안내</span>
+        <button class="popup-close" data-close="popup-help">✕</button>
+      </div>
+
+      <div class="help-body">
+        <!-- Left: tab nav -->
+        <aside class="help-nav" id="help-nav">
+          <button class="help-nav-btn active" data-help-tab="intro">🎯 프로토타입 소개</button>
+          <button class="help-nav-btn" data-help-tab="ui">🖥️ 화면 구성</button>
+          <button class="help-nav-btn" data-help-tab="scenario">🎬 시나리오 전환</button>
+          <button class="help-nav-btn" data-help-tab="asIs">① 기존안</button>
+          <button class="help-nav-btn" data-help-tab="improv1">② 개선안 1</button>
+          <button class="help-nav-btn" data-help-tab="improv2">③ 개선안 2</button>
+          <button class="help-nav-btn" data-help-tab="shortcuts">⌨ 단축키</button>
+          <button class="help-nav-btn" data-help-tab="faq">❓ FAQ</button>
+        </aside>
+
+        <!-- Right: content pane -->
+        <div class="help-content" id="help-content">
+          <!-- filled by JS -->
+        </div>
+      </div>
+
+      <div class="help-footer">
+        <label class="help-skip">
+          <input type="checkbox" id="help-dont-show" /> 다음부터 시작 시 자동 표시 안 함
+        </label>
+        <button class="btn btn-primary" data-close="popup-help">확인</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       POPUP: GAME MENU (ESC)
+       ============================================================ -->
+  <div id="popup-game-menu" class="popup hidden">
+    <div class="popup-window game-menu-window">
+      <div class="gm-header">
+        <div class="gm-header-spacer"></div>
+        <div class="gm-header-title">게임 메뉴</div>
+        <button class="popup-close" data-close="popup-game-menu">✕</button>
+      </div>
+
+      <div class="gm-body">
+        <!-- Left: character sidebar -->
+        <aside class="gm-character">
+          <div class="gm-gold-obtained">골드 획득 가능</div>
+          <div class="gm-portrait">
+            <div class="gm-portrait-img">👤</div>
+          </div>
+          <div class="gm-character-info">
+            <div class="gm-char-level">Lv.99 캐릭터 닉네임</div>
+            <div class="gm-char-gold">💰 9999.99</div>
+          </div>
+          <button class="gm-swap-char">다른 캐릭터 바로 접속</button>
+        </aside>
+
+        <!-- Center: content lists (5 categories) -->
+        <div class="gm-content-grid">
+          <div class="gm-col">
+            <div class="gm-col-head"><div class="gm-col-icon">🛡️</div>원정대</div>
+            <ul class="gm-col-list">
+              <li>콘텐츠 내용</li><li>콘텐츠 내용</li><li>콘텐츠 내용</li>
+              <li>콘텐츠 내용</li><li>콘텐츠 내용</li><li>콘텐츠 내용</li>
+              <li>콘텐츠 내용</li><li>콘텐츠 내용</li>
+            </ul>
+            <div class="gm-col-foot">🛒</div>
+          </div>
+          <div class="gm-col">
+            <div class="gm-col-head"><div class="gm-col-icon">📖</div>캐릭터</div>
+            <ul class="gm-col-list">
+              <li>콘텐츠 내용</li><li>콘텐츠 내용</li><li>콘텐츠 내용</li>
+              <li>콘텐츠 내용</li><li>콘텐츠 내용</li><li>콘텐츠 내용</li>
+              <li>콘텐츠 내용</li><li>콘텐츠 내용</li><li>콘텐츠 내용</li>
+              <li>콘텐츠 내용</li>
+            </ul>
+            <div class="gm-col-foot">🛒</div>
+          </div>
+          <div class="gm-col">
+            <div class="gm-col-head"><div class="gm-col-icon">🧭</div>모험</div>
+            <ul class="gm-col-list">
+              <li>콘텐츠 내용</li><li>콘텐츠 내용</li><li>콘텐츠 내용</li>
+              <li>콘텐츠 내용</li><li>콘텐츠 내용</li><li>콘텐츠 내용</li>
+              <li>콘텐츠 내용</li><li>콘텐츠 내용</li><li>콘텐츠 내용</li>
+            </ul>
+            <div class="gm-col-foot">🛒</div>
+          </div>
+          <div class="gm-col">
+            <div class="gm-col-head"><div class="gm-col-icon">🎯</div>길잡이</div>
+            <ul class="gm-col-list">
+              <li>콘텐츠 내용</li><li>콘텐츠 내용</li><li>콘텐츠 내용</li>
+              <li>콘텐츠 내용</li><li>콘텐츠 내용</li><li>콘텐츠 내용</li>
+              <li>콘텐츠 내용</li><li>콘텐츠 내용</li>
+            </ul>
+            <div class="gm-col-foot">🛒</div>
+          </div>
+          <div class="gm-col">
+            <div class="gm-col-head"><div class="gm-col-icon">💬</div>커뮤니티</div>
+            <ul class="gm-col-list">
+              <li>콘텐츠 내용</li><li>콘텐츠 내용</li><li>콘텐츠 내용</li>
+              <li>콘텐츠 내용</li><li>콘텐츠 내용</li><li>콘텐츠 내용</li>
+              <li>콘텐츠 내용</li><li>콘텐츠 내용</li><li>콘텐츠 내용</li>
+              <li>콘텐츠 내용</li>
+            </ul>
+            <div class="gm-col-foot">🛒</div>
+          </div>
+        </div>
+
+        <!-- Right: Weekly gold / shortcuts widget -->
+        <aside class="gm-shortcuts">
+          <div class="gm-sc-head">
+            <div class="gm-sc-char">캐릭터 닉네임</div>
+            <button class="gm-sc-settings" id="btn-shortcut-settings" title="전체 현황 보기">전체 현황 보기</button>
+            <button class="gm-sc-gear" title="설정">⚙</button>
+          </div>
+
+          <div class="gm-sc-limit">주간 골드 획득 제한 (<span id="gold-used">3</span>/6)</div>
+          <div class="gm-sc-row limit-row">
+            <span>⚜️ 콘텐츠 골드 획득</span>
+            <span class="limit-count"><span id="gold-used-2">3</span>/6</span>
+          </div>
+
+          <div class="gm-sc-section">일일 참여</div>
+          <div class="gm-sc-row">
+            <span>☀ 일일 콘텐츠 내용</span>
+            <span class="limit-count">1/1</span>
+          </div>
+          <div class="gm-sc-row">
+            <span>☀ 일일 콘텐츠 내용</span>
+            <span class="limit-count">0/1</span>
+          </div>
+
+          <div class="gm-sc-section">주간 참여 — 개별 설정 숏컷</div>
+          <div class="gm-shortcut-list" id="gm-shortcut-list">
+            <!-- dynamically filled by JS -->
+          </div>
+        </aside>
+      </div>
+
+      <!-- Bottom function bar -->
+      <div class="gm-footer">
+        <button class="gm-fn"><div class="gm-fn-icon">🛒</div>로스트아크샵</button>
+        <button class="gm-fn"><div class="gm-fn-icon">🔒</div>2차 비밀번호</button>
+        <button class="gm-fn"><div class="gm-fn-icon">💬</div>고객센터</button>
+        <button class="gm-fn"><div class="gm-fn-icon">🏃</div>탈출</button>
+        <button class="gm-fn"><div class="gm-fn-icon">⚙️</div>환경설정</button>
+        <button class="gm-fn"><div class="gm-fn-icon">👤</div>캐릭터 선택</button>
+        <button class="gm-fn"><div class="gm-fn-icon">💰</div>골드 획득<br/>캐릭터 지정</button>
+        <button class="gm-fn" data-close="popup-game-menu"><div class="gm-fn-icon">↩️</div>되돌아가기</button>
+        <button class="gm-fn"><div class="gm-fn-icon">⏻</div>게임종료</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       POPUP: STATUS VIEW SETTINGS (현황 보기 설정)
+       ============================================================ -->
+  <div id="popup-status-settings" class="popup hidden">
+    <div class="popup-window status-settings-window">
+      <div class="stset-header">
+        <span>⚙ 현황 보기 설정</span>
+        <button class="popup-close" data-close="popup-status-settings">✕</button>
+      </div>
+      <div class="stset-body">
+        <div class="stset-section">
+          <div class="stset-section-title">편의 설정</div>
+          <label class="stset-row"><input type="checkbox" checked /> 주간 골드 획득 정보 표시</label>
+          <label class="stset-row"><input type="checkbox" /> 권장 아이템 레벨 이하 콘텐츠 숨김</label>
+          <div class="stset-row stset-row-action">
+            <span>개별 설정</span>
+            <button class="btn btn-ghost btn-sm" id="btn-open-favorite-settings">설정</button>
+          </div>
+        </div>
+
+        <div class="stset-section">
+          <div class="stset-section-title">일일 참여</div>
+          <label class="stset-row"><input type="checkbox" checked /> 일일 콘텐츠 1</label>
+          <label class="stset-row"><input type="checkbox" checked /> 일일 콘텐츠 2</label>
+          <label class="stset-row"><input type="checkbox" /> 일일 콘텐츠 3</label>
+          <label class="stset-row"><input type="checkbox" /> 일일 콘텐츠 4</label>
+        </div>
+
+        <div class="stset-section">
+          <div class="stset-section-title">주간 참여</div>
+          <label class="stset-row"><input type="checkbox" checked /> 주간 콘텐츠 1</label>
+          <label class="stset-row"><input type="checkbox" checked /> 주간 콘텐츠 2</label>
+          <label class="stset-row"><input type="checkbox" /> 주간 콘텐츠 3</label>
+          <label class="stset-row"><input type="checkbox" /> 주간 콘텐츠 4</label>
+          <label class="stset-row"><input type="checkbox" /> 주간 콘텐츠 5</label>
+        </div>
+      </div>
+      <div class="stset-actions">
+        <button class="btn btn-ghost" data-close="popup-status-settings">취소</button>
+        <button class="btn btn-primary" data-close="popup-status-settings">저장</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       POPUP: FAVORITE SETTINGS (개별 설정 — 즐겨찾기 별 선택)
+       ============================================================ -->
+  <div id="popup-favorite-settings" class="popup hidden">
+    <div class="popup-window favorite-settings-window">
+      <div class="fav-header">
+        <span>⭐ 개별 설정</span>
+        <button class="popup-close" data-close="popup-favorite-settings">✕</button>
+      </div>
+      <div class="fav-subhead">
+        즐겨찾기 우선 표시 <b><span id="fav-count">0</span>/3</b>
+      </div>
+      <div class="fav-desc">
+        콘텐츠 길잡이의 <b>개별 설정</b> 필터에서 우선 노출할 콘텐츠를 최대 3개 선택하세요.<br/>
+        <span class="fav-note">데이터는 계정이 아닌 <b>캐릭터 단위</b>로 저장됩니다.</span>
+      </div>
+      <div class="fav-list" id="fav-list">
+        <!-- dynamically filled by JS -->
+      </div>
+      <div class="fav-actions">
+        <button class="btn btn-ghost" data-close="popup-favorite-settings">취소</button>
+        <button class="btn btn-primary" id="btn-save-favorites">저장</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       POPUP: CONTENT GUIDE (콘텐츠 길잡이)
+       ============================================================ -->
+  <div id="popup-content-guide" class="popup hidden">
+    <div class="popup-window content-guide-window">
+      <div class="cg-topbar">
+        <div class="cg-topbar-title">메인 화면</div>
+        <button class="popup-close" data-close="popup-content-guide">닫기(Esc) ✕</button>
+      </div>
+
+      <div class="cg-header">
+        <div class="cg-title">🎯 콘텐츠 길잡이</div>
+        <div class="cg-header-right">
+          <div class="cg-ilvl">설정 아이템 레벨 <b>1680</b></div>
+          <button class="cg-other-btn">⚓ 기타 콘텐츠</button>
+        </div>
+      </div>
+
+      <div class="cg-body">
+        <!-- Left: content grid with carousel -->
+        <div class="cg-left">
+          <div class="cg-section-label">엔드 콘텐츠</div>
+          <div class="cg-carousel">
+            <button class="cg-arrow cg-arrow-left" data-target="cg-end-row" data-dir="-1">◀</button>
+            <div class="cg-carousel-viewport">
+              <div class="cg-carousel-track" id="cg-end-row">
+                <!-- filled by JS -->
+              </div>
+            </div>
+            <button class="cg-arrow cg-arrow-right" data-target="cg-end-row" data-dir="1">▶</button>
+          </div>
+
+          <div class="cg-section-label">핵심 콘텐츠</div>
+          <div class="cg-carousel">
+            <button class="cg-arrow cg-arrow-left" data-target="cg-core-row" data-dir="-1">◀</button>
+            <div class="cg-carousel-viewport">
+              <div class="cg-carousel-track" id="cg-core-row">
+                <!-- filled by JS -->
+              </div>
+            </div>
+            <button class="cg-arrow cg-arrow-right" data-target="cg-core-row" data-dir="1">▶</button>
+          </div>
+
+          <div class="cg-note">* 콘텐츠 리스트는 좌 → 우 순으로 우선도가 높으며, 필터 설정에 따라 재정렬됩니다.<br/>좌우 화살표로 추가 콘텐츠를 확인하세요.</div>
+        </div>
+
+        <!-- Right: detail + filter -->
+        <div class="cg-right">
+          <div class="cg-filter-wrap">
+            <button class="cg-filter-btn" id="cg-filter-btn">
+              <span id="cg-filter-label">최신 순</span> ▾
+            </button>
+            <ul class="cg-filter-menu hidden" id="cg-filter-menu">
+              <li data-filter="latest">최신 순</li>
+              <li data-filter="gold">일반 골드 획득 기준</li>
+              <li data-filter="custom">개별 설정 순</li>
+            </ul>
+          </div>
+
+          <div class="cg-detail" id="cg-detail">
+            <div class="cg-detail-illust" id="cg-detail-illust">
+              <div class="cg-illust-placeholder">
+                <div class="cg-illust-title" id="cg-illust-title">최신 콘텐츠 일러스트 (기본값)</div>
+              </div>
+            </div>
+            <div class="cg-detail-info">
+              <div class="cg-detail-name" id="cg-detail-name">최신 콘텐츠 이름 (기본값)</div>
+              <div class="cg-detail-desc" id="cg-detail-desc">
+                콘텐츠 설명 콘텐츠 설명 콘텐츠 설명 콘텐츠 설명
+                콘텐츠 설명 콘텐츠 설명 콘텐츠 설명 콘텐츠 설명.
+                좌측 엔드/핵심 콘텐츠 리스트에서 항목을 선택하세요.
+              </div>
+              <button class="cg-shortcut-btn" id="cg-shortcut-btn" disabled>➡ 바로 가기</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       POPUP: CONTENT DETAIL (콘텐츠 팝업 - 난이도/관문)
+       ============================================================ -->
+  <div id="popup-content-detail" class="popup hidden">
+    <div class="popup-window content-detail-window">
+      <!-- Top category tabs -->
+      <div class="cd-tabs" id="cd-tabs">
+        <!-- filled by JS -->
+      </div>
+      <button class="popup-close cd-close" data-close="popup-content-detail">✕</button>
+
+      <div class="cd-body">
+        <!-- Left: Union skill / buff -->
+        <aside class="cd-left">
+          <div class="cd-union">
+            <div class="cd-union-crest">🛡️</div>
+            <div class="cd-union-title">연합군 스킬</div>
+            <div class="cd-union-desc">연합군 스킬 연합군 스킬 연합군 스킬</div>
+            <div class="cd-union-badges">
+              <div class="cd-badge">🎖️</div>
+              <div class="cd-badge">🎖️</div>
+              <div class="cd-badge">🎖️</div>
+            </div>
+          </div>
+          <div class="cd-members">
+            <div class="cd-member">👤<br/>캐릭터 1</div>
+            <div class="cd-member">👤<br/>캐릭터 2</div>
+            <div class="cd-member">👤<br/>캐릭터 3</div>
+          </div>
+        </aside>
+
+        <!-- Center: image + story + gate gold -->
+        <div class="cd-center">
+          <div class="cd-gate-count">관문<br/><b>4</b></div>
+          <div class="cd-image">
+            <div class="cd-image-title" id="cd-image-title">콘텐츠 이미지</div>
+          </div>
+          <div class="cd-story-label">콘텐츠 스토리</div>
+          <div class="cd-story-title" id="cd-story-title">콘텐츠 카테고리 1</div>
+          <div class="cd-story-desc">
+            콘텐츠 내용 콘텐츠 내용 콘텐츠 내용 콘텐츠 내용 콘텐츠 내용 콘텐츠 내용
+            콘텐츠 내용 콘텐츠 내용 콘텐츠 내용 콘텐츠 내용.
+          </div>
+          <div class="cd-gold-row">
+            <button class="cd-arrow">&lt;</button>
+            <div class="cd-gold-label">기본 보상</div>
+            <div class="cd-gold-coins" id="cd-gold-coins"></div>
+            <button class="cd-arrow">&gt;</button>
+          </div>
+        </div>
+
+        <!-- Right: Difficulty & enter -->
+        <aside class="cd-right">
+          <div class="cd-diff-label">입장 조건</div>
+          <div class="cd-diff-row" id="cd-diff-row">
+            <button class="cd-diff active" data-diff="normal">
+              <div class="cd-diff-icon">⚔️</div>
+              <div class="cd-diff-name">노말</div>
+            </button>
+            <button class="cd-diff" data-diff="hard">
+              <div class="cd-diff-icon">🔥</div>
+              <div class="cd-diff-name">하드</div>
+            </button>
+          </div>
+
+          <div class="cd-ilvl-row">
+            <span>나의 아이템 레벨</span>
+            <b id="cd-player-ilvl">1680</b>
+          </div>
+
+          <div class="cd-limit-label">제한 설정</div>
+          <div class="cd-limit-row">
+            <label><input type="checkbox" checked /> 🏅 서버 내 모집 파티만 검색</label>
+          </div>
+          <div class="cd-limit-row">
+            <label><input type="checkbox" /> ⭐ 길드 파티만 검색</label>
+          </div>
+          <div class="cd-limit-row">
+            <label><input type="checkbox" /> 🔒 암호 설정 파티 포함</label>
+          </div>
+          <div class="cd-limit-row">
+            <label><input type="checkbox" checked /> ⚜️ 주간 골드 제한 초과 포함</label>
+          </div>
+
+          <div class="cd-actions">
+            <button class="btn btn-ghost">매칭 신청</button>
+            <button class="btn btn-ghost" id="cd-enter-btn">파티 찾기</button>
+            <button class="btn btn-primary">입장하기</button>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       POPUP: PARTY FINDER (파티 찾기)
+       ============================================================ -->
+  <div id="popup-party-finder" class="popup hidden">
+    <div class="popup-window party-finder-window">
+      <div class="pf-header">
+        <span>파티 찾기</span>
+        <button class="popup-close" data-close="popup-party-finder">✕</button>
+      </div>
+
+      <div class="pf-body">
+        <!-- Left: category nav -->
+        <aside class="pf-nav" id="pf-nav">
+          <!-- filled by JS -->
+        </aside>
+
+        <!-- Center: party list -->
+        <div class="pf-center">
+          <div class="pf-filter-bar">
+            <button class="pf-chip" id="pf-diff-chip">전체 난이도 ▾</button>
+            <button class="pf-chip" id="pf-gate-chip">전체 관문 ▾</button>
+            <div class="pf-search">
+              <input type="text" placeholder="① 제목을 입력 해주세요." />
+              <button>🔍</button>
+            </div>
+            <button class="pf-chip">그룹 생성</button>
+            <button class="pf-chip primary">파티 모집 등록</button>
+          </div>
+
+          <div class="pf-list-head">
+            <div>목표</div>
+            <div>방장 / 관문 · 제목</div>
+            <div>인원 수</div>
+          </div>
+
+          <div class="pf-list" id="pf-list">
+            <!-- filled by JS -->
+          </div>
+
+          <div class="pf-empty hidden" id="pf-empty">
+            <div class="pf-empty-icon">❗</div>
+            <div>등록된 파티가 검색 결과에 일치하는 결과가 없습니다.<br/>
+              <small>(신규 등록 모집관은 일정 시간 이후 검색이 가능합니다.)</small>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: party detail -->
+        <aside class="pf-detail" id="pf-detail">
+          <div class="pf-detail-head">[난이도] 콘텐츠 이름 파티 모집 상세 정보</div>
+          <div class="pf-detail-sub" id="pf-detail-sub">[관문 설정]N번 째</div>
+
+          <div class="pf-detail-gates">
+            <div class="pf-gate-label">1번 째</div>
+            <div class="pf-gate-row">
+              <div class="pf-slot">
+                <span>서포터</span>
+                <b>9999.99</b>
+                <span class="pf-slot-name">캐릭터 닉네임 1 🔍</span>
+              </div>
+              <div class="pf-slot">
+                <span>서포터</span>
+                <b>9999.99</b>
+                <span class="pf-slot-name">캐릭터 닉네임 2 🔍</span>
+              </div>
+            </div>
+            <div class="pf-gate-row">
+              <div class="pf-slot">
+                <span>딜러</span>
+                <b>9999.99</b>
+                <span class="pf-slot-name">캐릭터 닉네임 3 🔍</span>
+              </div>
+              <div class="pf-slot">
+                <span>딜러</span>
+                <b>9999.99</b>
+                <span class="pf-slot-name">캐릭터 닉네임 4 🔍</span>
+              </div>
+            </div>
+            <div class="pf-gate-label">2번 째</div>
+            <div class="pf-gate-row">
+              <div class="pf-slot">
+                <span>서포터</span>
+                <b>9999.99</b>
+                <span class="pf-slot-name">캐릭터 닉네임 5 🔍</span>
+              </div>
+              <div class="pf-slot">
+                <span>서포터</span>
+                <b>9999.99</b>
+                <span class="pf-slot-name">캐릭터 닉네임 6 🔍</span>
+              </div>
+            </div>
+            <div class="pf-gate-row">
+              <div class="pf-slot empty">+ 공석대원 모집 중</div>
+              <div class="pf-slot empty">+ 공석대원 모집 중</div>
+            </div>
+          </div>
+
+          <div class="pf-apply">
+            <div class="pf-apply-desc">참가 신청 후 공개 대화 수락이 필요합니다.<br/>
+              <small>(아이템 레벨 <b>1680</b> 이상 신청 가능)</small>
+            </div>
+            <button class="btn btn-primary btn-big">참가 신청</button>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       TOAST NOTIFICATIONS
+       ============================================================ -->
+  <!-- ============================================================
+       COMPLETION OVERLAY (full-screen comparison)
+       ============================================================ -->
+  <div id="completion-overlay" class="popup hidden">
+    <div class="popup-window completion-window">
+      <div class="comp-header">
+        <span>🎯 타겟 화면 도달 완료!</span>
+        <button class="popup-close" data-close="completion-overlay">✕</button>
+      </div>
+      <div class="comp-body">
+        <div class="comp-result" id="comp-result-current">
+          <div class="comp-result-label" id="comp-result-label">현재 시나리오</div>
+          <div class="comp-result-clicks" id="comp-result-clicks">0</div>
+          <div class="comp-result-unit">클릭</div>
+        </div>
+        <div class="comp-vs">VS</div>
+        <div class="comp-result comp-result-baseline">
+          <div class="comp-result-label">기존안 (As-Is)</div>
+          <div class="comp-result-clicks">6</div>
+          <div class="comp-result-unit">클릭</div>
+        </div>
+      </div>
+      <div class="comp-saving" id="comp-saving">
+        <!-- filled by JS -->
+      </div>
+      <div class="comp-actions">
+        <button class="btn btn-ghost" id="comp-reset-btn">처음부터 다시하기</button>
+        <button class="btn btn-primary" id="comp-next-btn">다음 시나리오 체험 →</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-container"></div>
+
+  <script>
+/* ===== data.js (inlined) ===== */
+/* ============================================================
+   Lost Ark Simulation Data (generic nouns only)
+   ============================================================ */
+
+const PLAYER = {
+  name: "캐릭터 닉네임",
+  charClass: "서포터",
+  level: 70,
+  itemLevel: 1680,
+  gold: 9999.99,
+};
+
+// Raid data — generic labels
+// category   : "end"  = 엔드 콘텐츠 (최상위 레이드)
+//              "core" = 핵심 콘텐츠 (하위 레이드)
+// rewardType : "bound" = 귀속 골드 / "gold" = 일반 골드
+// order      : 최신 순 정렬 기준 (낮을수록 최신)
+const RAIDS = [
+  // ---- End Content (latest) ----
+  {
+    id: "raid-end-1",
+    name: "엔드 레이드 1",
+    category: "end",
+    rewardType: "bound",
+    ilvl: 1680,
+    order: 1,
+    icon: "👑",
+    difficulty: ["노말", "하드"],
+    gates: 3,
+    desc: "최상위 티어 레이드. 귀속 골드 전용 보상 구간 — 캐릭터 종속 재화로 설계되어 있습니다.",
+    cleared: false,
+    inRoster: true,
+  },
+  {
+    id: "raid-end-2",
+    name: "엔드 레이드 2",
+    category: "end",
+    rewardType: "bound",
+    ilvl: 1660,
+    order: 2,
+    icon: "🌊",
+    difficulty: ["노말", "하드"],
+    gates: 2,
+    desc: "상위 티어 레이드. 귀속 골드 전용 보상 구간.",
+    cleared: true,
+    inRoster: true,
+  },
+  {
+    id: "raid-end-3",
+    name: "엔드 레이드 3",
+    category: "end",
+    rewardType: "gold",
+    ilvl: 1640,
+    order: 3,
+    icon: "🐲",
+    difficulty: ["노말"],
+    gates: 2,
+    desc: "일반 골드 획득이 가능한 최상위 구간 레이드.",
+    cleared: false,
+    inRoster: true,
+  },
+  // ---- Core Content ----
+  {
+    id: "raid-core-1",
+    name: "핵심 레이드 1",
+    category: "core",
+    rewardType: "gold",
+    ilvl: 1620,
+    order: 4,
+    icon: "🐍",
+    difficulty: ["노말", "하드"],
+    gates: 2,
+    desc: "일반 골드 획득 주력 파밍 구간의 핵심 레이드.",
+    cleared: false,
+    inRoster: true,
+  },
+  {
+    id: "raid-core-2",
+    name: "핵심 레이드 2",
+    category: "core",
+    rewardType: "gold",
+    ilvl: 1600,
+    order: 5,
+    icon: "🗡️",
+    difficulty: ["노말", "하드"],
+    gates: 4,
+    desc: "장기 순환 주력 레이드. 일반 골드 획득 용도.",
+    cleared: false,
+    inRoster: true,
+  },
+  {
+    id: "raid-core-3",
+    name: "핵심 레이드 3",
+    category: "core",
+    rewardType: "gold",
+    ilvl: 1580,
+    order: 6,
+    icon: "🏛️",
+    difficulty: ["노말", "하드"],
+    gates: 3,
+    desc: "중위 구간 레이드 — 반복 파밍 용도의 핵심 콘텐츠.",
+    cleared: true,
+    inRoster: false,
+  },
+  {
+    id: "raid-core-4",
+    name: "핵심 레이드 4",
+    category: "core",
+    rewardType: "gold",
+    ilvl: 1540,
+    order: 7,
+    icon: "👼",
+    difficulty: ["노말", "하드"],
+    gates: 3,
+    desc: "기초 반복 파밍 레이드. 진입 아이템 레벨이 낮아 부담이 적습니다.",
+    cleared: false,
+    inRoster: false,
+  },
+  // ---- Additional End Content (for carousel) ----
+  {
+    id: "raid-end-4",
+    name: "엔드 레이드 4",
+    category: "end",
+    rewardType: "gold",
+    ilvl: 1620,
+    order: 8,
+    icon: "⚔️",
+    difficulty: ["노말", "하드"],
+    gates: 4,
+    desc: "이전 세대 최상위 레이드. 일반 골드 획득 구간.",
+    cleared: false,
+    inRoster: false,
+  },
+  {
+    id: "raid-end-5",
+    name: "엔드 레이드 5",
+    category: "end",
+    rewardType: "gold",
+    ilvl: 1600,
+    order: 9,
+    icon: "🔱",
+    difficulty: ["노말"],
+    gates: 2,
+    desc: "초기 엔드급 레이드. 일반 골드 보상.",
+    cleared: true,
+    inRoster: false,
+  },
+  // ---- Additional Core Content (for carousel) ----
+  {
+    id: "raid-core-5",
+    name: "핵심 레이드 5",
+    category: "core",
+    rewardType: "gold",
+    ilvl: 1520,
+    order: 10,
+    icon: "🛡️",
+    difficulty: ["노말", "하드"],
+    gates: 2,
+    desc: "중하위 구간 레이드. 입문용 골드 획득.",
+    cleared: false,
+    inRoster: false,
+  },
+  {
+    id: "raid-core-6",
+    name: "핵심 레이드 6",
+    category: "core",
+    rewardType: "gold",
+    ilvl: 1500,
+    order: 11,
+    icon: "🏰",
+    difficulty: ["노말"],
+    gates: 2,
+    desc: "기초 입문 레이드.",
+    cleared: true,
+    inRoster: false,
+  },
+];
+
+// Party finder category tree (상위 → 하위) — generic labels
+const PF_CATEGORIES = [
+  {
+    id: "cat-top-raid",
+    name: "최상위 레이드",
+    children: [
+      { id: "sub-end-1", name: "엔드 레이드 1", raidId: "raid-end-1" },
+      { id: "sub-end-2", name: "엔드 레이드 2", raidId: "raid-end-2" },
+      { id: "sub-end-3", name: "엔드 레이드 3", raidId: "raid-end-3" },
+    ],
+  },
+  {
+    id: "cat-high-raid",
+    name: "상위 레이드",
+    children: [
+      { id: "sub-core-1", name: "핵심 레이드 1", raidId: "raid-core-1" },
+      { id: "sub-core-2", name: "핵심 레이드 2", raidId: "raid-core-2" },
+    ],
+  },
+  {
+    id: "cat-mid-raid",
+    name: "중위 레이드",
+    children: [
+      { id: "sub-core-3", name: "핵심 레이드 3", raidId: "raid-core-3" },
+      { id: "sub-core-4", name: "핵심 레이드 4", raidId: "raid-core-4" },
+    ],
+  },
+  { id: "cat-high-dungeon", name: "고급 던전", children: [] },
+  { id: "cat-low-raid", name: "하위 레이드", children: [] },
+  { id: "cat-boss-hunt", name: "보스 토벌", children: [] },
+  { id: "cat-cycle-dungeon", name: "순환 던전", children: [] },
+  { id: "cat-adv-dungeon", name: "모험 던전", children: [] },
+  { id: "cat-quest", name: "퀘스트 콘텐츠", children: [] },
+  { id: "cat-island", name: "섬 콘텐츠", children: [] },
+  { id: "cat-life", name: "생활 콘텐츠", children: [] },
+];
+
+// Dummy party rows
+function generatePartyRowsFor(raidId) {
+  const base = [
+    { host: "방장 캐릭터 닉네임", gate: "1관문", title: "경험자만 빠른 클리어", count: "4/8" },
+    { host: "방장 캐릭터 닉네임", gate: "1관문", title: "반숙 이상 입장 1주차", count: "3/8" },
+    { host: "방장 캐릭터 닉네임", gate: "2관문", title: "딜러 4 고정 서포터 구함", count: "6/8" },
+    { host: "방장 캐릭터 닉네임", gate: "1관문", title: "초보 환영 천천히 진행", count: "1/8" },
+    { host: "방장 캐릭터 닉네임", gate: "2관문", title: "골드만 빠르게 트라이", count: "4/8" },
+    { host: "방장 캐릭터 닉네임", gate: "1관문", title: "친목 지양 공대장 말 잘듣는 분", count: "7/8", locked: true },
+    { host: "방장 캐릭터 닉네임", gate: "2관문", title: "스위칭 환영 딜러 2자리", count: "5/8" },
+  ];
+  return base.map((p) => ({ ...p, raidId }));
+}
+
+const SHORTCUT_CONFIG_KEY = "la_shortcuts";
+
+</script>
+  <script>
+/* ===== script.js (inlined) ===== */
+/* ============================================================
+   Lost Ark - Core Content Entry Flow Improvement
+   Simulation script — scenario-driven interactions
+   ============================================================ */
+
+const $ = (sel) => document.querySelector(sel);
+const $$ = (sel) => Array.from(document.querySelectorAll(sel));
+
+// ============================================================
+// SCENARIOS
+//
+// features.shortcuts : 게임 메뉴 숏컷 버튼 활성 여부
+// features.filter    : 콘텐츠 길잡이 필터 드롭다운 활성 여부
+// ============================================================
+const SCENARIOS = {
+  asIs: {
+    name: "기존안",
+    label: "현행 As-Is 플로우",
+    max: 6,
+    color: "#e53935",
+    features: { shortcuts: false, filter: false },
+    guidance: `
+      <strong>기존안 — 현행 콘텐츠 진입 플로우 (Interaction Cost: 6 클릭)</strong><br/>
+      <kbd>ESC</kbd>로 <b>게임 메뉴</b>를 열어 콘텐츠 현황을 파악한 뒤,
+      <kbd>Alt</kbd>+<kbd>Q</kbd>로 길잡이를 열고 콘텐츠 선택 → 바로 가기 → 난이도 → 파티 찾기 → 관문 설정 순서로
+      총 <b>6단계</b>를 거쳐야 타겟 파티에 도달합니다.<br/>
+      <small style="color:#e53935">* 숏컷 버튼(개선안 1)과 필터 기능(개선안 2)은 비활성 상태입니다.</small>
+    `,
+    steps: [
+      { id: 1, label: "게임 메뉴에서 콘텐츠 현황 파악", desc: "ESC → 게임 메뉴 호출 후 주간 참여 현황을 수동 확인합니다." },
+      { id: 2, label: "콘텐츠 길잡이 호출", desc: "최신 콘텐츠 기준 고정 노출 (필터 없음)." },
+      { id: 3, label: "콘텐츠 선택 + 바로 가기", desc: "카드 클릭 → 바로 가기 버튼으로 팝업 호출." },
+      { id: 4, label: "난이도 선택", desc: "콘텐츠 팝업에서 노말/하드 수동 선택." },
+      { id: 5, label: "파티 찾기 호출", desc: "파티 찾기 팝업 진입." },
+      { id: 6, label: "관문 설정 + 파티 선택", desc: "카테고리와 관문을 재탐색해 타겟 파티 확정." },
+    ],
+  },
+  improv1: {
+    name: "개선안 1",
+    label: "게임 메뉴 허브 + 숏컷",
+    max: 2,
+    color: "#4caf50",
+    features: { shortcuts: true, filter: false },
+    guidance: `
+      <strong>개선안 1 — 게임 메뉴 허브화 & 숏컷 연동 (Interaction Cost: 2 클릭)</strong><br/>
+      <kbd>ESC</kbd>로 게임 메뉴를 열고, 우측의 <b>개별 설정 숏컷</b>을 클릭하세요.
+      사전 저장된 캐릭터 단위 설정으로 <b>2단계</b> 만에 파티 찾기까지 도달합니다.
+      기존안 대비 <b style="color:#4caf50">66% 절감</b>.<br/>
+      <small style="color:#4caf50">* 숏컷 버튼이 활성화되었습니다. 필터 기능은 개선안 2에서 활성화됩니다.</small>
+    `,
+    steps: [
+      { id: 1, label: "게임 메뉴(ESC) 호출", desc: "탐색 허브 호출 — 개별 설정 숏컷 확인." },
+      { id: 2, label: "숏컷 클릭 → 파티 찾기 도달", desc: "캐릭터 단위 사전 저장값으로 즉시 연결 (66% ↓)." },
+    ],
+  },
+  improv2: {
+    name: "개선안 2",
+    label: "콘텐츠 길잡이 동적 필터링",
+    max: 4,
+    color: "#c9a961",
+    features: { shortcuts: true, filter: true },
+    guidance: `
+      <strong>개선안 2 — 콘텐츠 길잡이 동적 필터링 (Interaction Cost: 4 클릭)</strong><br/>
+      <kbd>Alt</kbd>+<kbd>Q</kbd>로 <b>콘텐츠 길잡이</b>를 열고, 우측 상단의
+      <b>[최신 순 / 일반 골드 획득 / 개별 설정 순]</b> 드롭다운으로 정렬을 전환해
+      목적 기반으로 타겟 콘텐츠를 우선 노출시키세요.
+      기존안 대비 <b style="color:#c9a961">33% 절감</b>.<br/>
+      <small style="color:#c9a961">* 숏컷 버튼과 필터 기능이 모두 활성화되었습니다.</small>
+    `,
+    steps: [
+      { id: 1, label: "콘텐츠 길잡이 호출", desc: "Alt+Q 혹은 위젯 호출." },
+      { id: 2, label: "필터 전환", desc: "[최신 / 일반 골드 / 개별 설정] 정렬 토글." },
+      { id: 3, label: "타겟 콘텐츠 선택 + 바로 가기", desc: "우선 배치된 타겟을 즉시 선택." },
+      { id: 4, label: "파티 찾기 도달", desc: "목적 기반 파티 찾기 접근." },
+    ],
+  },
+};
+
+// ============================================================
+// GLOBAL STATE
+// ============================================================
+const state = {
+  scenario: "asIs",
+  depth: 0,
+  completed: false,
+  selectedRaidId: null,
+  guideFilter: "latest",
+  chosenDifficulty: "normal",
+  openRaidId: null,
+  openTargetSubId: null,
+  shortcutIds: RAIDS.filter((r) => r.inRoster).map((r) => r.id),
+  activePopup: null,
+};
+
+// Action → step mapping per scenario
+const ACTION_MAP = {
+  asIs: {
+    openGameMenu: 1,
+    openContentGuide: 2,
+    openPartyWidget: 2,
+    clickGuideShortcut: 3,
+    selectDifficulty: 4,
+    clickEnterRaid: 5,
+    selectParty: 6,
+  },
+  improv1: {
+    openGameMenu: 1,
+    clickShortcut: 2,
+  },
+  improv2: {
+    openContentGuide: 1,
+    switchFilter: 2,
+    clickGuideShortcut: 3,
+    clickEnterRaid: 4,
+    clickShortcut: 4,
+  },
+};
+
+// ============================================================
+// HELPERS — features
+// ============================================================
+function feat() {
+  return SCENARIOS[state.scenario].features;
+}
+
+// ============================================================
+// SCENARIO CONTROLLER
+// ============================================================
+function setScenario(id) {
+  const scen = SCENARIOS[id];
+  if (!scen) return;
+  state.scenario = id;
+  state.depth = 0;
+  state.completed = false;
+  state.selectedRaidId = null;
+  state.guideFilter = "latest";
+
+  // Hide completion banner
+  $("#depth-complete").classList.add("hidden");
+
+  // Set body data attribute for CSS-driven toggling
+  document.body.dataset.scenario = id;
+
+  // Update depth counter header
+  $("#depth-scenario-name").textContent = scen.name;
+  $("#depth-scenario-name").style.background = scen.color;
+  $("#depth-max").textContent = scen.max;
+  $("#depth-current").textContent = 0;
+  $("#depth-fill").style.width = "0%";
+  $("#depth-label").textContent = scen.label;
+
+  // Render per-step situation list
+  const box = $("#step-situation");
+  box.innerHTML = "";
+  scen.steps.forEach((s, i) => {
+    const el = document.createElement("div");
+    el.className = "step-item";
+    el.dataset.idx = i;
+    el.innerHTML = `<b>${s.id}.</b>${s.label}<small>${s.desc}</small>`;
+    box.appendChild(el);
+  });
+
+  // Update guide text
+  $("#fg-body").innerHTML = scen.guidance;
+
+  // Update tab active state
+  $$(".fg-tab").forEach((t) => {
+    t.classList.toggle("active", t.dataset.scenario === id);
+  });
+
+  // Apply feature toggles
+  applyFeatureToggles(scen);
+  renderStepHighlight();
+  // Refresh game menu right panel so 개별 설정 is reflected on scenario switch
+  renderShortcutList();
+}
+
+function applyFeatureToggles(scen) {
+  // Shortcut section label in game menu
+  const sectionLabel = $(".gm-sc-section");
+  if (scen.features.shortcuts) {
+    sectionLabel.textContent = "주간 참여 — 개별 설정 숏컷";
+  } else {
+    sectionLabel.textContent = "주간 참여";
+  }
+
+  // Filter label reset when filter disabled
+  if (!scen.features.filter) {
+    state.guideFilter = "latest";
+    $("#cg-filter-label").textContent = "최신 순";
+  }
+}
+
+function renderStepHighlight() {
+  $$(".step-item").forEach((el) => {
+    const idx = parseInt(el.dataset.idx, 10);
+    el.classList.remove("done", "active");
+    if (idx + 1 < state.depth) el.classList.add("done");
+    if (idx + 1 === state.depth) el.classList.add("active");
+  });
+}
+
+function recordAction(action) {
+  const scen = SCENARIOS[state.scenario];
+  const targetStep = ACTION_MAP[state.scenario]?.[action];
+  if (targetStep == null) return;
+  if (state.completed) return; // prevent further clicks after completion
+  if (targetStep > state.depth) {
+    state.depth = Math.min(targetStep, scen.max);
+    $("#depth-current").textContent = state.depth;
+    $("#depth-fill").style.width = `${(state.depth / scen.max) * 100}%`;
+    const current = scen.steps.find((s) => s.id === state.depth);
+    if (current) $("#depth-label").textContent = current.label;
+    renderStepHighlight();
+
+    // Check for completion
+    if (state.depth >= scen.max) {
+      state.completed = true;
+      setTimeout(() => showCompletion(), 400);
+    }
+  }
+}
+
+// ============================================================
+// COMPLETION STATE
+// ============================================================
+function showCompletion() {
+  const scen = SCENARIOS[state.scenario];
+  const clicks = scen.max;
+  const baselineClicks = SCENARIOS.asIs.max; // 6 = As-Is baseline
+
+  // --- Side panel completion banner ---
+  const banner = $("#depth-complete");
+  banner.classList.remove("hidden");
+  $("#complete-click-count").textContent = clicks;
+
+  const compare = $("#complete-compare");
+  if (state.scenario === "asIs") {
+    compare.innerHTML = `현행 시스템의 기본 조작 비용입니다.<br/>개선안 탭을 클릭해 비교해 보세요.`;
+  } else {
+    const saved = baselineClicks - clicks;
+    const pct = Math.round((saved / baselineClicks) * 100);
+    compare.innerHTML = `기존안 대비 <b>${saved}단계</b> 절감<br/><span class="saving-pct">${pct}% 감소</span>`;
+  }
+
+  // --- Full-screen comparison overlay ---
+  const overlay = $("#completion-overlay");
+  $("#comp-result-label").textContent = scen.name;
+  $("#comp-result-clicks").textContent = clicks;
+
+  if (state.scenario === "asIs") {
+    // Hide VS comparison for As-Is (it's the baseline)
+    $(".comp-result-baseline").style.display = "none";
+    $(".comp-vs").style.display = "none";
+    $("#comp-saving").innerHTML = `
+      <div>현행 시스템에서 파티 찾기까지 <b>${clicks}회 클릭</b>이 필요합니다.</div>
+      <div class="saving-detail">개선안 탭을 선택해 단축된 플로우를 직접 체험해 보세요.</div>
+    `;
+    $("#comp-next-btn").textContent = "개선안 1 체험하기 →";
+  } else {
+    $(".comp-result-baseline").style.display = "";
+    $(".comp-vs").style.display = "";
+    const saved = baselineClicks - clicks;
+    const pct = Math.round((saved / baselineClicks) * 100);
+    $("#comp-saving").innerHTML = `
+      <div>조작 비용 <span class="saving-highlight">${pct}% 감소</span></div>
+      <div class="saving-detail">${baselineClicks}회 → ${clicks}회로 ${saved}단계 절감 — 사용자 피로도와 이탈 리스크를 대폭 줄입니다.</div>
+    `;
+
+    if (state.scenario === "improv1") {
+      $("#comp-next-btn").textContent = "개선안 2 체험하기 →";
+    } else {
+      $("#comp-next-btn").textContent = "기존안으로 돌아가기";
+    }
+  }
+
+  // Color the current result card
+  const resultCard = $("#comp-result-current");
+  resultCard.style.borderColor = scen.color;
+  resultCard.querySelector(".comp-result-clicks").style.color = scen.color;
+
+  openPopup("completion-overlay");
+}
+
+function hideCompletion() {
+  $("#depth-complete").classList.add("hidden");
+  closePopup("completion-overlay");
+}
+
+function resetScenarioProgress() {
+  state.depth = 0;
+  state.completed = false;
+  state.selectedRaidId = null;
+  state.guideFilter = "latest";
+  $("#depth-current").textContent = 0;
+  $("#depth-fill").style.width = "0%";
+  const scen = SCENARIOS[state.scenario];
+  $("#depth-label").textContent = scen.label;
+  hideCompletion();
+  applyFeatureToggles(scen);
+  renderStepHighlight();
+}
+
+// ============================================================
+// TOAST
+// ============================================================
+function toast(msg, kind = "") {
+  const el = document.createElement("div");
+  el.className = `toast ${kind}`;
+  el.innerHTML = msg;
+  $("#toast-container").appendChild(el);
+  setTimeout(() => {
+    el.style.transition = "opacity 0.35s";
+    el.style.opacity = "0";
+    setTimeout(() => el.remove(), 360);
+  }, 1800);
+}
+
+// ============================================================
+// POPUP MANAGEMENT
+// ============================================================
+function openPopup(id) {
+  $(`#${id}`).classList.remove("hidden");
+  state.activePopup = id;
+}
+function closePopup(id) {
+  $(`#${id}`).classList.add("hidden");
+  if (state.activePopup === id) state.activePopup = null;
+}
+function closeAllPopups() {
+  $$(".popup").forEach((p) => p.classList.add("hidden"));
+  state.activePopup = null;
+}
+
+$$("[data-close]").forEach((btn) => {
+  btn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    closePopup(btn.dataset.close);
+  });
+});
+
+// ============================================================
+// GAME MENU — SHORTCUTS
+// ============================================================
+function renderShortcutList() {
+  const list = $("#gm-shortcut-list");
+  list.innerHTML = "";
+
+  const shortcutsEnabled = feat().shortcuts;
+
+  // Hide/show the settings button based on feature
+  const settingsBtn = $("#btn-shortcut-settings");
+  settingsBtn.style.display = shortcutsEnabled ? "" : "none";
+
+  // --- DISABLED mode (기존안): plain info rows, NOT clickable ---
+  if (!shortcutsEnabled) {
+    const raids = RAIDS.filter((r) => r.inRoster);
+    if (raids.length === 0) {
+      const row = document.createElement("div");
+      row.className = "gm-sc-row";
+      row.innerHTML = `<span style="color:#888">표시할 콘텐츠가 없습니다.</span>`;
+      list.appendChild(row);
+    } else {
+      raids.forEach((raid) => {
+        const row = document.createElement("div");
+        row.className = "gm-sc-row" + (raid.cleared ? " cleared-row" : "");
+        row.innerHTML = `
+          <span>${raid.icon} ${raid.name}</span>
+          <span class="limit-count">${raid.cleared ? "참여 완료" : "참여 가능"}</span>
+        `;
+        list.appendChild(row);
+      });
+    }
+
+    // Disabled notice
+    const notice = document.createElement("div");
+    notice.className = "feature-notice";
+    notice.innerHTML = `🔒 숏컷 버튼은 <b>개선안 1</b>에서 활성화됩니다.`;
+    list.appendChild(notice);
+    return;
+  }
+
+  // --- ENABLED mode (개선안 1, 2): clickable shortcut rows mirroring 개별 설정 ---
+  const shortcuts = state.shortcutIds
+    .map((id) => RAIDS.find((r) => r.id === id))
+    .filter(Boolean);
+
+  // Header showing custom count (visual feedback for 개별 설정 반영)
+  const header = document.createElement("div");
+  header.className = "gm-sc-custom-header";
+  header.innerHTML = `⭐ 개별 설정 반영 <b>${shortcuts.length}</b>개`;
+  list.appendChild(header);
+
+  // Empty State (no shortcuts configured)
+  if (shortcuts.length === 0) {
+    const empty = document.createElement("div");
+    empty.className = "gm-sc-row empty-state";
+    empty.innerHTML = `
+      <span style="color:#888">⚠ 개별 설정된 콘텐츠가 없습니다.</span>
+    `;
+    list.appendChild(empty);
+
+    const cta = document.createElement("button");
+    cta.className = "gm-shortcut-empty-cta";
+    cta.textContent = "개별 설정 바로가기";
+    cta.addEventListener("click", openFavoriteSettings);
+    list.appendChild(cta);
+    return;
+  }
+
+  // Clickable rows using the same .gm-sc-row layout as the disabled mode
+  shortcuts.forEach((raid) => {
+    const row = document.createElement("div");
+    row.className = "gm-sc-row gm-sc-row-clickable" + (raid.cleared ? " cleared-row" : "");
+    row.innerHTML = `
+      <span>⭐ ${raid.icon} ${raid.name}</span>
+      <span class="limit-count">${raid.cleared ? "참여 완료" : "참여 가능 ➡"}</span>
+    `;
+    if (!raid.cleared) {
+      row.addEventListener("click", () => {
+        recordAction("clickShortcut");
+        closePopup("popup-game-menu");
+        openPartyFinderFor(raid.id);
+        toast(`⚡ 숏컷 진입 — ${raid.name}`, "success");
+      });
+    }
+    list.appendChild(row);
+  });
+}
+
+// ============================================================
+// STATUS VIEW SETTINGS (gear icon) + FAVORITE SETTINGS (stars)
+// ============================================================
+const MAX_FAVORITES = 3;
+// Temporary selection buffer — committed to state.shortcutIds on save
+let tempFavorites = [];
+
+function openShortcutSettings() {
+  // Existing "전체 현황 보기" button opens the status settings popup
+  openStatusSettings();
+}
+
+function openStatusSettings() {
+  if (!feat().shortcuts) {
+    toast("🔒 현황 보기 설정은 개선안 1에서 활성화됩니다.", "danger");
+    return;
+  }
+  openPopup("popup-status-settings");
+}
+
+function openFavoriteSettings() {
+  // Seed temp buffer from committed state, capped to MAX_FAVORITES
+  tempFavorites = state.shortcutIds.slice(0, MAX_FAVORITES);
+  renderFavoriteList();
+  openPopup("popup-favorite-settings");
+}
+
+function renderFavoriteList() {
+  const list = $("#fav-list");
+  list.innerHTML = "";
+
+  RAIDS.forEach((raid) => {
+    const selected = tempFavorites.includes(raid.id);
+    const item = document.createElement("div");
+    item.className = "fav-item" + (selected ? " selected" : "");
+    const diffLabel = raid.difficulty.join("/");
+    item.innerHTML = `
+      <button class="fav-star" data-raid-id="${raid.id}">${selected ? "⭐" : "☆"}</button>
+      <span class="fav-icon">${raid.icon}</span>
+      <span class="fav-name"><b>${raid.name}</b></span>
+      <span class="fav-diff">${diffLabel}</span>
+      <span class="fav-ilvl">IL ${raid.ilvl}</span>
+    `;
+    list.appendChild(item);
+  });
+
+  $("#fav-count").textContent = tempFavorites.length;
+
+  list.querySelectorAll(".fav-star").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const id = btn.dataset.raidId;
+      const idx = tempFavorites.indexOf(id);
+      if (idx !== -1) {
+        tempFavorites.splice(idx, 1);
+      } else {
+        if (tempFavorites.length >= MAX_FAVORITES) {
+          toast(`⚠ 최대 ${MAX_FAVORITES}개까지 선택할 수 있습니다.`, "danger");
+          return;
+        }
+        tempFavorites.push(id);
+      }
+      renderFavoriteList();
+    });
+  });
+}
+
+// Wire existing "전체 현황 보기" button → status settings popup
+$("#btn-shortcut-settings").addEventListener("click", openShortcutSettings);
+
+// Wire gear icon (⚙) → status settings popup
+document.querySelector(".gm-sc-gear")?.addEventListener("click", (e) => {
+  e.stopPropagation();
+  openStatusSettings();
+});
+
+// Inside status settings: "설정" opens favorite settings
+$("#btn-open-favorite-settings").addEventListener("click", (e) => {
+  e.stopPropagation();
+  closePopup("popup-status-settings");
+  openFavoriteSettings();
+});
+
+// Save favorite selection → state.shortcutIds (picked up by content guide custom filter)
+$("#btn-save-favorites").addEventListener("click", () => {
+  state.shortcutIds = tempFavorites.slice();
+  renderShortcutList();
+  // If content guide is open and currently set to custom filter, re-render
+  if (state.guideFilter === "custom") {
+    renderContentGuide();
+    renderGuideDetail();
+  }
+  closePopup("popup-favorite-settings");
+  toast(`✅ 개별 설정을 저장했습니다. (${state.shortcutIds.length}개)`, "success");
+});
+
+// ============================================================
+// CONTENT GUIDE
+// ============================================================
+function getSortedRaids() {
+  let list = [...RAIDS];
+  if (state.guideFilter === "latest") {
+    list.sort((a, b) => a.order - b.order);
+  } else if (state.guideFilter === "gold") {
+    list.sort((a, b) => {
+      if (a.rewardType !== b.rewardType) {
+        return a.rewardType === "gold" ? -1 : 1;
+      }
+      return a.order - b.order;
+    });
+  } else if (state.guideFilter === "custom") {
+    list.sort((a, b) => {
+      const ai = state.shortcutIds.indexOf(a.id);
+      const bi = state.shortcutIds.indexOf(b.id);
+      if (ai !== -1 && bi !== -1) return ai - bi;
+      if (ai !== -1) return -1;
+      if (bi !== -1) return 1;
+      return a.order - b.order;
+    });
+  }
+  return list;
+}
+
+// Carousel state: track scroll offset per row
+const carouselOffsets = { "cg-end-row": 0, "cg-core-row": 0 };
+const VISIBLE_END = 3;
+const VISIBLE_CORE = 4;
+
+function renderContentGuide() {
+  const list = getSortedRaids();
+  const end = list.filter((r) => r.category === "end");
+  const core = list.filter((r) => r.category === "core");
+
+  const endRow = $("#cg-end-row");
+  const coreRow = $("#cg-core-row");
+  endRow.innerHTML = "";
+  coreRow.innerHTML = "";
+
+  // Reset carousel offsets on re-render
+  carouselOffsets["cg-end-row"] = 0;
+  carouselOffsets["cg-core-row"] = 0;
+  endRow.style.transform = "translateX(0)";
+  coreRow.style.transform = "translateX(0)";
+
+  const emptyCustom =
+    state.guideFilter === "custom" && state.shortcutIds.length === 0;
+
+  const makeCard = (raid) => {
+    const d = document.createElement("div");
+    d.className = "cg-card";
+    if (raid.rewardType === "bound") d.classList.add("bound-type");
+    else d.classList.add("gold-type");
+    if (raid.cleared) d.classList.add("cleared");
+    if (raid.ilvl > PLAYER.itemLevel) d.classList.add("ilvl-low");
+    if (raid.id === state.selectedRaidId) d.classList.add("selected");
+    d.innerHTML = `
+      <div class="cg-card-illust">${raid.icon}</div>
+      <div class="cg-card-name">${raid.name}</div>
+      <div class="cg-card-ilvl">IL ${raid.ilvl} · ${raid.rewardType === "bound" ? "귀속" : "일반"}</div>
+    `;
+    d.addEventListener("click", () => {
+      if (raid.ilvl > PLAYER.itemLevel) {
+        toast("🔒 아이템 레벨이 부족합니다.", "danger");
+        return;
+      }
+      state.selectedRaidId = raid.id;
+      recordAction("selectGuideCard");
+      renderContentGuide();
+      renderGuideDetail();
+    });
+    return d;
+  };
+
+  const makePlaceholder = (label) => {
+    const d = document.createElement("div");
+    d.className = "cg-card";
+    d.style.opacity = "0.5";
+    d.innerHTML = `
+      <div class="cg-card-illust" style="background:#9a9a9a">?</div>
+      <div class="cg-card-name">${label}</div>
+      <div class="cg-card-ilvl">미설정</div>
+    `;
+    return d;
+  };
+
+  if (emptyCustom) {
+    for (let i = 0; i < VISIBLE_END; i++) endRow.appendChild(makePlaceholder("미설정"));
+    for (let i = 0; i < VISIBLE_CORE; i++) coreRow.appendChild(makePlaceholder("미설정"));
+  } else {
+    end.forEach((r) => endRow.appendChild(makeCard(r)));
+    core.forEach((r) => coreRow.appendChild(makeCard(r)));
+  }
+
+  // Filter notice when filter is disabled
+  renderFilterNotice();
+}
+
+function renderFilterNotice() {
+  // Remove existing notice if any
+  const existing = $(".cg-filter-notice");
+  if (existing) existing.remove();
+
+  if (!feat().filter) {
+    const notice = document.createElement("div");
+    notice.className = "cg-filter-notice feature-notice";
+    notice.innerHTML = `🔒 필터 기능은 <b>개선안 2</b>에서 활성화됩니다.`;
+    $(".cg-filter-wrap").appendChild(notice);
+  }
+}
+
+function renderGuideDetail() {
+  const raid = RAIDS.find((r) => r.id === state.selectedRaidId);
+  const illust = $("#cg-detail-illust");
+  const title = $("#cg-illust-title");
+  const name = $("#cg-detail-name");
+  const desc = $("#cg-detail-desc");
+  const btn = $("#cg-shortcut-btn");
+
+  illust.classList.remove("gold-type", "bound-type");
+
+  if (!raid) {
+    title.textContent = "최신 콘텐츠 일러스트 (기본값)";
+    name.textContent = "최신 콘텐츠 이름 (기본값)";
+    desc.textContent = "좌측 엔드/핵심 콘텐츠 리스트에서 항목을 선택하세요.";
+    btn.disabled = true;
+    return;
+  }
+
+  illust.classList.add(raid.rewardType === "bound" ? "bound-type" : "gold-type");
+  title.textContent = `${raid.icon}  ${raid.name}`;
+  name.textContent = `${raid.name} (IL ${raid.ilvl})`;
+  desc.textContent = raid.desc;
+  btn.disabled = false;
+}
+
+$("#cg-shortcut-btn").addEventListener("click", () => {
+  const raid = RAIDS.find((r) => r.id === state.selectedRaidId);
+  if (!raid) return;
+  recordAction("clickGuideShortcut");
+  closePopup("popup-content-guide");
+  openContentDetail(raid.id);
+});
+
+// Filter dropdown — only functional when filter feature is ON
+$("#cg-filter-btn").addEventListener("click", (e) => {
+  e.stopPropagation();
+  if (!feat().filter) {
+    toast("🔒 필터 기능은 개선안 2에서 활성화됩니다.", "danger");
+    return;
+  }
+  $("#cg-filter-menu").classList.toggle("hidden");
+});
+document.addEventListener("click", () => {
+  $("#cg-filter-menu").classList.add("hidden");
+});
+$$("#cg-filter-menu li").forEach((li) => {
+  li.addEventListener("click", (e) => {
+    e.stopPropagation();
+    if (!feat().filter) return;
+
+    state.guideFilter = li.dataset.filter;
+    const labels = {
+      latest: "최신 순",
+      gold: "일반 골드 획득",
+      custom: "개별 설정",
+    };
+    $("#cg-filter-label").textContent = labels[state.guideFilter];
+    $$("#cg-filter-menu li").forEach((x) => x.classList.remove("active"));
+    li.classList.add("active");
+    $("#cg-filter-menu").classList.add("hidden");
+    recordAction("switchFilter");
+    renderContentGuide();
+    renderGuideDetail();
+    toast(`🔀 정렬: ${labels[state.guideFilter]}`);
+  });
+});
+
+// ============================================================
+// CONTENT DETAIL (raid popup)
+// ============================================================
+function openContentDetail(raidId) {
+  state.openRaidId = raidId;
+  const raid = RAIDS.find((r) => r.id === raidId);
+  if (!raid) return;
+
+  const tabs = $("#cd-tabs");
+  tabs.innerHTML = "";
+  for (let i = 1; i <= 6; i++) {
+    const tab = document.createElement("button");
+    tab.className = "cd-tab";
+    if (i === Math.min(raid.order, 6)) tab.classList.add("active");
+    tab.innerHTML = `콘텐츠 카테고리 ${i}<small>콘텐츠 카테고리 내용</small>`;
+    tabs.appendChild(tab);
+  }
+
+  const img = $(".cd-image");
+  img.classList.remove("gold-type", "bound-type");
+  img.classList.add(raid.rewardType === "bound" ? "bound-type" : "gold-type");
+  $("#cd-image-title").textContent = `${raid.icon} ${raid.name}`;
+  $("#cd-story-title").textContent = raid.name;
+  $("#cd-player-ilvl").textContent = PLAYER.itemLevel;
+
+  const coins = $("#cd-gold-coins");
+  coins.innerHTML = "";
+  const coinType = raid.rewardType === "bound" ? "bound" : "";
+  for (let i = 0; i < 8; i++) {
+    const c = document.createElement("div");
+    c.className = "cd-coin " + coinType;
+    c.textContent = "G";
+    coins.appendChild(c);
+  }
+
+  const diffRow = $("#cd-diff-row");
+  diffRow.innerHTML = "";
+  raid.difficulty.forEach((d, idx) => {
+    const b = document.createElement("button");
+    b.className = "cd-diff" + (idx === 0 ? " active" : "");
+    b.dataset.diff = d;
+    b.innerHTML = `
+      <div class="cd-diff-icon">${d === "하드" ? "🔥" : "⚔️"}</div>
+      <div class="cd-diff-name">${d}</div>
+    `;
+    b.addEventListener("click", () => {
+      $$("#cd-diff-row .cd-diff").forEach((x) => x.classList.remove("active"));
+      b.classList.add("active");
+      state.chosenDifficulty = d;
+      recordAction("selectDifficulty");
+    });
+    diffRow.appendChild(b);
+  });
+  state.chosenDifficulty = raid.difficulty[0];
+
+  openPopup("popup-content-detail");
+}
+
+$("#cd-enter-btn").addEventListener("click", () => {
+  closePopup("popup-content-detail");
+  recordAction("clickEnterRaid");
+  openPartyFinderFor(state.openRaidId);
+});
+
+// ============================================================
+// PARTY FINDER
+// ============================================================
+function renderPartyFinderNav(targetSubId) {
+  const nav = $("#pf-nav");
+  nav.innerHTML = "";
+
+  PF_CATEGORIES.forEach((cat) => {
+    const item = document.createElement("div");
+    item.className = "pf-nav-item";
+    const hasChildren = cat.children && cat.children.length > 0;
+    const containsTarget =
+      hasChildren && cat.children.some((c) => c.id === targetSubId);
+
+    if (containsTarget) item.classList.add("open", "selected-parent");
+    item.innerHTML = `<span>🛡️</span> ${cat.name}${hasChildren ? " ▾" : ""}`;
+    item.addEventListener("click", () => {
+      const isOpen = item.classList.toggle("open");
+      const children = nav.querySelectorAll(`[data-parent="${cat.id}"]`);
+      children.forEach((ch) => (ch.style.display = isOpen ? "block" : "none"));
+    });
+    nav.appendChild(item);
+
+    if (hasChildren) {
+      cat.children.forEach((child) => {
+        const sub = document.createElement("div");
+        sub.className = "pf-nav-sub";
+        sub.dataset.parent = cat.id;
+        if (child.id === targetSubId) sub.classList.add("selected");
+        sub.style.display = containsTarget ? "block" : "none";
+        sub.textContent = `▸ ${child.name}`;
+        sub.addEventListener("click", (e) => {
+          e.stopPropagation();
+          $$(".pf-nav-sub").forEach((x) => x.classList.remove("selected"));
+          sub.classList.add("selected");
+          state.openTargetSubId = child.id;
+          renderPartyList(child.raidId);
+          recordAction("selectParty");
+        });
+        nav.appendChild(sub);
+      });
+    }
+  });
+}
+
+function renderPartyList(raidId) {
+  const raid = RAIDS.find((r) => r.id === raidId);
+  const list = $("#pf-list");
+  const empty = $("#pf-empty");
+  list.innerHTML = "";
+
+  if (!raid) {
+    list.classList.add("hidden");
+    empty.classList.remove("hidden");
+    return;
+  }
+  list.classList.remove("hidden");
+  empty.classList.add("hidden");
+
+  $(".pf-detail-head").textContent = `[${state.chosenDifficulty}] ${raid.name} 파티 모집 상세 정보`;
+  $("#pf-detail-sub").textContent = `[관문 설정] ${raid.gates}번 째`;
+  $("#pf-diff-chip").textContent = (state.chosenDifficulty || "전체 난이도") + " ▾";
+
+  const rows = generatePartyRowsFor(raidId);
+  rows.forEach((p, i) => {
+    const item = document.createElement("div");
+    item.className = "pf-party-item" + (p.locked ? " locked" : "");
+    if (i === 0) item.classList.add("selected");
+    item.innerHTML = `
+      <div class="pf-party-target">${raid.icon}<br/>${raid.name}</div>
+      <div class="pf-party-title">
+        <b>${p.host}</b>
+        <span>${p.gate} · ${p.title}</span>
+      </div>
+      <div class="pf-party-count">${p.count}</div>
+    `;
+    item.addEventListener("click", () => {
+      $$(".pf-party-item").forEach((x) => x.classList.remove("selected"));
+      item.classList.add("selected");
+      recordAction("selectParty");
+    });
+    list.appendChild(item);
+  });
+}
+
+function openPartyFinderFor(raidId) {
+  const subId = findSubIdForRaid(raidId);
+  state.openTargetSubId = subId;
+  renderPartyFinderNav(subId);
+  renderPartyList(raidId);
+  openPopup("popup-party-finder");
+}
+
+function findSubIdForRaid(raidId) {
+  for (const cat of PF_CATEGORIES) {
+    for (const ch of cat.children || []) {
+      if (ch.raidId === raidId) return ch.id;
+    }
+  }
+  return null;
+}
+
+// ============================================================
+// WIDGET / HUD BUTTONS
+// ============================================================
+$("#btn-open-party").addEventListener("click", () => {
+  renderPartyFinderNav(null);
+  renderPartyList(null);
+  openPopup("popup-party-finder");
+  recordAction("openPartyWidget");
+});
+
+// ============================================================
+// WIDGET ORDER SETTINGS
+// ============================================================
+const DEFAULT_WIDGET_ORDER = [
+  { id: "w1", label: "위젯 1" },
+  { id: "party", label: "파티 찾기" },
+  { id: "w2", label: "위젯 2" },
+  { id: "w3", label: "위젯 3" },
+  { id: "w4", label: "위젯 4" },
+  { id: "w5", label: "위젯 5" },
+  { id: "w6", label: "위젯 6" },
+];
+let widgetOrder = DEFAULT_WIDGET_ORDER.map((w) => ({ ...w }));
+let tempWidgetOrder = [];
+
+function openWidgetSettings() {
+  const panel = $("#widget-order-panel");
+  const isOpen = !panel.classList.contains("hidden");
+  if (isOpen) {
+    panel.classList.add("hidden");
+    return;
+  }
+  tempWidgetOrder = widgetOrder.map((w) => ({ ...w }));
+  renderWidgetOrderList();
+  panel.classList.remove("hidden");
+}
+
+function renderWidgetOrderList() {
+  const list = $("#wo-list");
+  list.innerHTML = "";
+  tempWidgetOrder.forEach((w, i) => {
+    const item = document.createElement("div");
+    item.className = "wo-item" + (w.id === "party" ? " wo-item-party" : "");
+    item.innerHTML = `
+      <span class="wo-order-num">${i + 1}</span>
+      <span class="wo-item-name">${w.label}</span>
+      <div class="wo-arrows">
+        <button class="wo-arrow" data-dir="-1" data-idx="${i}">▲</button>
+        <button class="wo-arrow" data-dir="1" data-idx="${i}">▼</button>
+      </div>
+    `;
+    list.appendChild(item);
+  });
+
+  // Arrow click handlers
+  list.querySelectorAll(".wo-arrow").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const idx = parseInt(btn.dataset.idx, 10);
+      const dir = parseInt(btn.dataset.dir, 10);
+      const newIdx = idx + dir;
+      if (newIdx < 0 || newIdx >= tempWidgetOrder.length) return;
+      // Swap
+      [tempWidgetOrder[idx], tempWidgetOrder[newIdx]] = [tempWidgetOrder[newIdx], tempWidgetOrder[idx]];
+      renderWidgetOrderList();
+    });
+  });
+}
+
+function applyWidgetOrder() {
+  widgetOrder = tempWidgetOrder.map((w) => ({ ...w }));
+  const slots = $("#widget-slots");
+  const buttons = {};
+  slots.querySelectorAll(".widget-btn").forEach((btn) => {
+    buttons[btn.dataset.widgetId] = btn;
+  });
+  // Re-append in new order
+  widgetOrder.forEach((w) => {
+    if (buttons[w.id]) slots.appendChild(buttons[w.id]);
+  });
+  $("#widget-order-panel").classList.add("hidden");
+  toast("✅ 위젯 순서가 적용되었습니다.", "success");
+}
+
+$("#btn-widget-settings").addEventListener("click", openWidgetSettings);
+$("#wo-close").addEventListener("click", () => $("#widget-order-panel").classList.add("hidden"));
+$("#wo-apply-order").addEventListener("click", applyWidgetOrder);
+$("#wo-reset-order").addEventListener("click", () => {
+  tempWidgetOrder = DEFAULT_WIDGET_ORDER.map((w) => ({ ...w }));
+  renderWidgetOrderList();
+});
+
+// ============================================================
+// SCENARIO TABS
+// ============================================================
+$$(".fg-tab").forEach((tab) => {
+  tab.addEventListener("click", () => {
+    closeAllPopups();
+    setScenario(tab.dataset.scenario);
+    toast(`🎬 ${SCENARIOS[tab.dataset.scenario].name}으로 전환`);
+  });
+});
+
+// ============================================================
+// KEYBOARD
+// ============================================================
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") {
+    // Close widget settings panel first if open
+    const woPanel = $("#widget-order-panel");
+    if (!woPanel.classList.contains("hidden")) {
+      woPanel.classList.add("hidden");
+      return;
+    }
+    if (state.activePopup) {
+      closePopup(state.activePopup);
+    } else {
+      openPopup("popup-game-menu");
+      renderShortcutList();
+      recordAction("openGameMenu");
+    }
+  } else if ((e.key === "q" || e.key === "Q") && e.altKey) {
+    e.preventDefault();
+    openPopup("popup-content-guide");
+    renderContentGuide();
+    renderGuideDetail();
+    recordAction("openContentGuide");
+  } else if ((e.key === "r" || e.key === "R") && !e.altKey && !e.ctrlKey) {
+    closeAllPopups();
+    resetScenarioProgress();
+    toast("🔄 시뮬레이션을 초기화했습니다.");
+  }
+});
+
+// ============================================================
+// CAROUSEL (content guide left/right)
+// ============================================================
+document.addEventListener("click", (e) => {
+  const arrow = e.target.closest(".cg-arrow");
+  if (!arrow) return;
+
+  const targetId = arrow.dataset.target;
+  const dir = parseInt(arrow.dataset.dir, 10); // -1 = left, +1 = right
+  const track = $(`#${targetId}`);
+  if (!track) return;
+
+  const cardCount = track.children.length;
+  const visibleCount = targetId === "cg-end-row" ? VISIBLE_END : VISIBLE_CORE;
+  const maxOffset = Math.max(0, cardCount - visibleCount);
+
+  let offset = carouselOffsets[targetId] + dir;
+  offset = Math.max(0, Math.min(offset, maxOffset));
+  carouselOffsets[targetId] = offset;
+
+  // Each card = (100% / visibleCount) including gap
+  // Calculate pixel shift based on card width + gap
+  const viewport = track.parentElement;
+  const vpWidth = viewport.offsetWidth;
+  const gap = 8;
+  const cardWidth = (vpWidth - gap * (visibleCount - 1)) / visibleCount;
+  const shift = offset * (cardWidth + gap);
+  track.style.transform = `translateX(-${shift}px)`;
+});
+
+// ============================================================
+// COMPLETION OVERLAY BUTTONS
+// ============================================================
+$("#btn-reset").addEventListener("click", () => {
+  closeAllPopups();
+  resetScenarioProgress();
+  toast("🔄 시뮬레이션을 초기화했습니다.");
+});
+
+$("#comp-reset-btn").addEventListener("click", () => {
+  closeAllPopups();
+  resetScenarioProgress();
+  toast("🔄 시뮬레이션을 초기화했습니다.");
+});
+
+$("#comp-next-btn").addEventListener("click", () => {
+  closeAllPopups();
+  const order = ["asIs", "improv1", "improv2"];
+  const idx = order.indexOf(state.scenario);
+  const nextId = order[(idx + 1) % order.length];
+  setScenario(nextId);
+  toast(`🎬 ${SCENARIOS[nextId].name}으로 전환`);
+});
+
+// New close handler for completion overlay
+document.querySelector('[data-close="completion-overlay"]')?.addEventListener("click", (e) => {
+  e.stopPropagation();
+  closePopup("completion-overlay");
+});
+
+// ============================================================
+// KEYBOARD HINT BUTTONS (clickable shortcuts)
+// ============================================================
+$("#kb-game-menu").addEventListener("click", () => {
+  openPopup("popup-game-menu");
+  renderShortcutList();
+  recordAction("openGameMenu");
+});
+
+$("#kb-content-guide").addEventListener("click", () => {
+  openPopup("popup-content-guide");
+  renderContentGuide();
+  renderGuideDetail();
+  recordAction("openContentGuide");
+});
+
+$("#kb-reset").addEventListener("click", () => {
+  closeAllPopups();
+  resetScenarioProgress();
+  toast("🔄 시뮬레이션을 초기화했습니다.");
+});
+
+// ============================================================
+// VIEWPORT SCALING (fit 1920×1080 to any screen)
+// ============================================================
+function fitToViewport() {
+  const designW = 1920;
+  const designH = 1080;
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  const scale = Math.min(vw / designW, vh / designH);
+  const offsetX = (vw - designW * scale) / 2;
+  const offsetY = (vh - designH * scale) / 2;
+  document.body.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
+}
+fitToViewport();
+window.addEventListener("resize", fitToViewport);
+
+// ============================================================
+// HELP POPUP (사용법 안내)
+// ============================================================
+const HELP_CONTENT = {
+  intro: `
+    <h2>🎯 프로토타입 소개</h2>
+    <p>이 프로토타입은 <b>로스트아크 코어 콘텐츠 진입 플로우</b>의 UX 개선 제안을 직접 체험할 수 있도록 제작한 프로토타입입니다.</p>
+    <h3>비교 대상 3가지 시나리오</h3>
+    <ul>
+      <li><span class="help-badge baseline">기존안</span> 현행 As-Is 플로우 — 파티 찾기까지 <b>6 클릭</b></li>
+      <li><span class="help-badge improv">개선안 1</span> 게임 메뉴 허브 + 숏컷 — <b>2 클릭</b> (66% 절감)</li>
+      <li><span class="help-badge improv">개선안 2</span> 콘텐츠 길잡이 동적 필터링 — <b>4 클릭</b> (33% 절감)</li>
+    </ul>
+    <div class="help-tip">
+      <b>목표:</b> 좌측 상단 <b>Interaction Cost</b> 카운터로 클릭 수를 실시간 확인하고, 상단 <b>시나리오 탭</b>을 전환하며 세 가지 방식을 직접 비교해 보세요.
+    </div>
+  `,
+
+  ui: `
+    <h2>🖥️ 화면 구성</h2>
+    <p>프로토타입는 1920×1080 해상도 기준으로 디자인되었으며 뷰포트에 맞춰 자동 스케일링됩니다.</p>
+    <h3>주요 영역</h3>
+    <ul>
+      <li><b>좌측 상단 — Interaction Cost 패널</b><br/>
+        현재 시나리오의 클릭 수 / 최대치와 진행 중인 단계 목록을 표시합니다.</li>
+      <li><b>중앙 상단 — 플로우 가이드</b><br/>
+        시나리오 탭 (기존안/개선안 1/개선안 2) 전환 및 각 시나리오 설명을 제공합니다. 우측 <b>📖 사용법</b> 버튼으로 이 창을 다시 열 수 있습니다.</li>
+      <li><b>중앙 — 게임 월드</b><br/>
+        메인 화면 시뮬레이션. 플레이어 캐릭터, 미니맵, 위젯 바가 배치되어 있습니다.</li>
+      <li><b>우측 상단 — 미니맵 + 위젯 바</b><br/>
+        파티 버튼 (파란색) 을 포함한 위젯 슬롯. 햄버거 (≡) 로 순서 변경 가능.</li>
+      <li><b>하단 — 단축키 힌트</b><br/>
+        <kbd>ESC</kbd> / <kbd>Alt</kbd>+<kbd>Q</kbd> / <kbd>R</kbd> 버튼을 직접 클릭해도 동작합니다.</li>
+    </ul>
+  `,
+
+  scenario: `
+    <h2>🎬 시나리오 전환</h2>
+    <p>상단 <b>플로우 가이드</b> 패널의 3개 탭을 클릭해 언제든 시나리오를 전환할 수 있습니다.</p>
+    <ol class="help-step-list">
+      <li>원하는 시나리오 탭 클릭 → 기능 토글 자동 적용 (숏컷 / 필터 활성화 여부)</li>
+      <li>좌측 Interaction Cost 카운터가 해당 시나리오의 최대 클릭 수로 갱신</li>
+      <li>플로우 가이드 본문에 해당 시나리오 안내 문구 출력</li>
+    </ol>
+    <div class="help-tip">
+      <b>완료 후 자동 비교:</b> 마지막 단계에 도달하면 전체 화면 비교 팝업이 열려 기존안 대비 절감율 (%) 을 확인할 수 있습니다. 여기서 <b>다음 시나리오 체험 →</b> 으로 순차 진행도 가능합니다.
+    </div>
+    <div class="help-warn">
+      <b>초기화:</b> <kbd>R</kbd> 키 또는 하단 <kbd>R</kbd> 버튼으로 현재 시나리오를 처음부터 다시 시작할 수 있습니다.
+    </div>
+  `,
+
+  asIs: `
+    <h2>① 기존안 체험 <span class="help-badge baseline">6 클릭</span></h2>
+    <p>현행 로스트아크의 As-Is 플로우를 재현합니다. 숏컷·필터 기능은 <b>비활성</b> 상태입니다.</p>
+    <h3>진행 순서</h3>
+    <ol class="help-step-list">
+      <li><kbd>ESC</kbd> → 게임 메뉴 호출 (콘텐츠 현황 확인)</li>
+      <li><kbd>Alt</kbd>+<kbd>Q</kbd> → 콘텐츠 길잡이 호출</li>
+      <li>엔드/핵심 콘텐츠 카드 선택 → <b>바로 가기</b> 버튼 클릭</li>
+      <li>콘텐츠 팝업에서 <b>난이도</b> 선택 (노말/하드)</li>
+      <li><b>파티 찾기</b> 버튼 클릭</li>
+      <li>파티 찾기 팝업에서 카테고리 + 관문 재탐색 → 파티 선택</li>
+    </ol>
+    <div class="help-warn">
+      <b>관찰 포인트:</b> 매 단계마다 수동 탐색이 필요하며, 개별 설정 숏컷·필터 드롭다운은 잠금 표시가 나타납니다.
+    </div>
+  `,
+
+  improv1: `
+    <h2>② 개선안 1 체험 <span class="help-badge improv">2 클릭 · 66% ↓</span></h2>
+    <p><b>게임 메뉴를 탐색 허브화</b>하고, 사전 저장된 캐릭터 단위 <b>숏컷 버튼</b>으로 파티 찾기까지 즉시 연결합니다.</p>
+    <h3>진행 순서</h3>
+    <ol class="help-step-list">
+      <li><kbd>ESC</kbd> → 게임 메뉴 호출</li>
+      <li>우측 <b>주간 참여 — 개별 설정 숏컷</b> 영역에서 원하는 콘텐츠 행 클릭 → 파티 찾기 자동 진입</li>
+    </ol>
+    <div class="help-tip">
+      <b>개별 설정 숏컷 커스터마이징:</b> 게임 메뉴 우측 상단 <b>⚙ 톱니바퀴</b> → <b>현황 보기 설정</b> → <b>개별 설정 &gt; 설정</b> → ⭐ 별 아이콘으로 최대 <b>3개</b> 콘텐츠를 지정할 수 있습니다.
+    </div>
+  `,
+
+  improv2: `
+    <h2>③ 개선안 2 체험 <span class="help-badge improv">4 클릭 · 33% ↓</span></h2>
+    <p><b>콘텐츠 길잡이에 동적 필터</b>를 도입해 목적 (최신/일반 골드/개별 설정) 기반으로 타겟 콘텐츠를 우선 노출합니다.</p>
+    <h3>진행 순서</h3>
+    <ol class="help-step-list">
+      <li><kbd>Alt</kbd>+<kbd>Q</kbd> → 콘텐츠 길잡이 호출</li>
+      <li>우측 상단 <b>[최신 순 ▾]</b> 드롭다운 클릭 → 원하는 필터 선택<br/>
+        <small>(최신 순 / 일반 골드 획득 / 개별 설정 순)</small></li>
+      <li>우선 배치된 타겟 카드 선택 → <b>바로 가기</b> 버튼 클릭</li>
+      <li>콘텐츠 팝업에서 <b>파티 찾기</b> 버튼 클릭 → 파티 찾기 진입</li>
+    </ol>
+    <div class="help-tip">
+      <b>개별 설정 필터 연동:</b> 게임 메뉴 ⚙ → 현황 보기 설정 → 개별 설정에서 별로 선택한 콘텐츠가 길잡이 <b>개별 설정</b> 필터 상단에 동일한 순서로 노출됩니다. 게임 메뉴 우측 "개별 설정 반영 N개" 헤더로도 반영 개수를 확인할 수 있습니다.
+    </div>
+  `,
+
+  shortcuts: `
+    <h2>⌨ 단축키 & 조작</h2>
+    <h3>키보드</h3>
+    <ul>
+      <li><kbd>ESC</kbd> — 게임 메뉴 열기 / 열린 팝업 닫기</li>
+      <li><kbd>Alt</kbd>+<kbd>Q</kbd> — 콘텐츠 길잡이 열기</li>
+      <li><kbd>R</kbd> — 현재 시나리오 초기화</li>
+    </ul>
+    <h3>마우스</h3>
+    <ul>
+      <li>하단 단축키 힌트 영역의 버튼도 키보드 단축키와 동일하게 동작합니다.</li>
+      <li>위젯 바의 파란 <b>파티</b> 버튼 — 파티 찾기 직접 호출</li>
+      <li>위젯 바 햄버거 (≡) — 위젯 순서 변경 패널</li>
+    </ul>
+    <div class="help-tip">
+      <b>팝업 상호작용:</b> 대부분 팝업의 우측 상단 <b>✕</b> 또는 <kbd>ESC</kbd> 로 닫을 수 있습니다.
+    </div>
+  `,
+
+  faq: `
+    <h2>❓ 자주 묻는 질문</h2>
+    <h3>Q. 클릭 수 카운터가 증가하지 않아요.</h3>
+    <p>카운터는 각 시나리오의 <b>유효 단계</b>에서만 증가합니다. 예를 들어 기존안에서 6단계를 다 밟아야 완료 팝업이 열립니다. 이미 지나간 단계의 버튼을 다시 클릭해도 중복 카운트되지 않습니다.</p>
+
+    <h3>Q. 개별 설정을 저장했는데 반영이 안 보입니다.</h3>
+    <p>반영되는 위치는 두 곳입니다:</p>
+    <ul>
+      <li><b>게임 메뉴 우측 패널</b> — "⭐ 개별 설정 반영 N개" 헤더와 함께 선택한 콘텐츠가 즉시 리스트에 표시됩니다.</li>
+      <li><b>콘텐츠 길잡이</b> — 필터를 <b>개별 설정</b>으로 전환해야 해당 순서대로 상단 노출됩니다.</li>
+    </ul>
+
+    <h3>Q. 화면이 깨져 보입니다 / 잘려 보여요.</h3>
+    <p>내부 디자인은 1920×1080 기준이며 뷰포트에 맞춰 자동 스케일링됩니다. 브라우저 창이 너무 작을 경우 축소되어 UI 요소가 작아질 수 있으니 <b>전체 화면</b> (<kbd>F11</kbd>) 으로 보시는 것을 권장합니다.</p>
+
+    <h3>Q. 이 프로토타입의 목적은 무엇인가요?</h3>
+    <p>개선 제안에 대한 프로토타입입니다. 수치는 설계 가정값이며 실제 서비스와 다를 수 있습니다.</p>
+  `,
+};
+
+function renderHelpTab(tabId) {
+  const content = HELP_CONTENT[tabId] || HELP_CONTENT.intro;
+  $("#help-content").innerHTML = content;
+  $("#help-content").scrollTop = 0;
+  $$(".help-nav-btn").forEach((b) => {
+    b.classList.toggle("active", b.dataset.helpTab === tabId);
+  });
+}
+
+function openHelp(tabId = "intro") {
+  renderHelpTab(tabId);
+  openPopup("popup-help");
+}
+
+$("#btn-open-help").addEventListener("click", () => openHelp("intro"));
+
+$$(".help-nav-btn").forEach((btn) => {
+  btn.addEventListener("click", () => renderHelpTab(btn.dataset.helpTab));
+});
+
+// "다음부터 표시 안 함" checkbox — persist via localStorage
+const HELP_SKIP_KEY = "la_help_dont_show";
+try {
+  const dontShow = localStorage.getItem(HELP_SKIP_KEY) === "1";
+  const chk = $("#help-dont-show");
+  if (chk) {
+    chk.checked = dontShow;
+    chk.addEventListener("change", () => {
+      localStorage.setItem(HELP_SKIP_KEY, chk.checked ? "1" : "0");
+    });
+  }
+} catch (_) { /* localStorage may be blocked (file://) — ignore */ }
+
+// Auto-show help on first visit (unless user opted out)
+function maybeAutoShowHelp() {
+  try {
+    if (localStorage.getItem(HELP_SKIP_KEY) === "1") return;
+  } catch (_) { /* ignore */ }
+  // Delay slightly so viewport scaling settles first
+  setTimeout(() => openHelp("intro"), 400);
+}
+
+// ============================================================
+// INIT
+// ============================================================
+setScenario("asIs");
+maybeAutoShowHelp();
+
+</script>
+</body>
+</html>
+

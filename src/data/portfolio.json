@@ -1,0 +1,132 @@
+[
+  {
+    "id": "grounded-lock-system",
+    "title": "Grounded2 잠금 시스템 개선 기획서",
+    "categoryId": "plan",
+    "summary": "잠금 시스템의 조건, 안내, 해제 흐름을 분석하고 개선 방향을 정리한 기획서입니다.",
+    "intention": "플레이어가 콘텐츠 잠금 상태를 만났을 때 왜 막혔는지, 무엇을 하면 해제되는지 명확히 이해하는 것이 중요하다고 판단했습니다. 잠금 조건, 안내 문구, 해제 후 피드백을 분리해 정보 전달 구조를 정리했습니다.\n\n개선안은 불필요한 혼란을 줄이고 다음 행동을 자연스럽게 유도하는 것을 목표로 했으며, 실제 서비스 화면에서 적용 가능한 문서 형태로 구성했습니다.",
+    "thumbnailUrl": "/assets/thumbnails/grounded-lock-system.png",
+    "pdfUrl": "/assets/pdfs/Grounded2_잠금 시스템_개선 기획서.pdf",
+    "order": 1
+  },
+  {
+    "id": "lostark-gold-character",
+    "title": "로스트아크 골드 획득 캐릭터 지정 시스템 역기획서",
+    "categoryId": "plan",
+    "summary": "로스트아크의 골드 획득 캐릭터 지정 구조를 역기획 관점에서 분석한 문서입니다.",
+    "intention": "다중 캐릭터 성장 구조에서 보상 획득 제한은 경제 안정성과 플레이 동기 사이의 균형이 핵심입니다. 해당 시스템이 어떤 문제를 해결하기 위해 설계되었는지, 사용자에게 어떤 선택 기준을 제공하는지 분석했습니다.\n\n규칙, 제한, 예외 상황을 문서화해 시스템 의도를 재구성하고, 라이브 서비스에서 보상 구조가 어떻게 운영 리스크를 줄이는지 설명하는 데 집중했습니다.",
+    "thumbnailUrl": "/assets/thumbnails/lostark-gold-character.png",
+    "pdfUrl": "/assets/pdfs/로스트아크_골드 획득 캐릭터 지정 시스템_역기획서.pdf",
+    "order": 2
+  },
+  {
+    "id": "lostark-gem-reset",
+    "title": "로스트아크 젬 가공 초기화 시스템 UX 역기획서",
+    "categoryId": "plan",
+    "summary": "젬 가공 초기화 과정의 선택, 확인, 피드백 UX를 분석한 역기획서입니다.",
+    "intention": "재화가 소모되는 초기화 기능은 사용자의 실수 방지와 결과 이해가 중요합니다. 기능 진입, 선택 정보, 확인 단계, 결과 피드백이 어떤 순서로 배치되어 있는지 분석하고 UX 관점에서 의미를 정리했습니다.\n\n문서는 단순 화면 설명이 아니라 사용자가 결정을 내릴 때 필요한 정보와 불안 요소를 기준으로 흐름을 재구성했습니다.",
+    "thumbnailUrl": "/assets/thumbnails/lostark-gem-reset.png",
+    "pdfUrl": "/assets/pdfs/로스트아크_젬 가공 초기화 시스템_UX 역기획서.pdf",
+    "order": 3
+  },
+  {
+    "id": "lostark-core-content-flow",
+    "title": "로스트아크 코어 콘텐츠 진입 플로우 개선 제안서",
+    "categoryId": "plan",
+    "summary": "코어 콘텐츠 진입까지의 탐색, 조건 확인, 이동 흐름을 개선하는 제안서입니다.",
+    "intention": "콘텐츠가 많아질수록 사용자는 어디로 가야 하는지보다 왜 그 콘텐츠를 해야 하는지 먼저 이해해야 합니다. 코어 콘텐츠 진입 전 필요한 정보, 조건, 추천 흐름을 정리해 탐색 비용을 줄이는 방향을 제안했습니다.\n\n개선안은 콘텐츠 접근성을 높이면서도 기존 시스템 구조를 크게 흔들지 않는 현실적인 적용 가능성에 초점을 맞췄습니다.",
+    "thumbnailUrl": "/assets/thumbnails/lostark-core-content-flow.png",
+    "pdfUrl": "/assets/pdfs/로스트아크_코어 콘텐츠 진입 플로우_개선 제안서.pdf",
+    "order": 4
+  },
+  {
+    "id": "penalty-nullification-ticket",
+    "title": "패널티 무효권 시스템 창작 기획서",
+    "categoryId": "plan",
+    "summary": "패널티 완화 아이템의 획득, 사용 조건, 악용 방지 기준을 설계한 창작 기획서입니다.",
+    "intention": "패널티를 완전히 제거하는 기능은 편의성과 악용 가능성이 동시에 존재합니다. 무효권의 사용 조건, 제한 규칙, 획득 경로, 예외 상황을 정의해 시스템이 제공해야 할 가치와 통제 장치를 함께 설계했습니다.\n\n기획서는 플레이어의 복귀 부담을 낮추되 게임 규칙의 신뢰를 해치지 않는 균형점을 목표로 작성했습니다.",
+    "thumbnailUrl": "/assets/thumbnails/penalty-nullification-ticket.png",
+    "pdfUrl": "/assets/pdfs/패널티 무효권 시스템_창작 기획서.pdf",
+    "order": 5
+  },
+  {
+    "id": "portfolio-vs-like-webgl",
+    "title": "Portfolio VS-like WebGL 게임",
+    "categoryId": "game",
+    "summary": "Unity WebGL로 실행 가능한 VS-like 장르 기반 게임 프로토타입입니다.",
+    "intention": "기획 문서뿐 아니라 직접 실행 가능한 결과물로 플레이 흐름과 조작 피드백을 검증하기 위해 제작한 WebGL 게임입니다. 짧은 세션 안에서 이동, 회피, 반복 전투의 감각을 확인할 수 있도록 구성했습니다.\n\n웹에서 바로 실행되는 형태로 등록해 포트폴리오 검토자가 별도 설치 없이 플레이 경험을 확인할 수 있게 했습니다.",
+    "thumbnailUrl": "/assets/thumbnails/webgl-game.svg",
+    "webglUrl": "/assets/webgl/portfolio-vs-like/index.html",
+    "order": 6
+  },
+  {
+    "id": "maze-runner-html-game",
+    "title": "Maze Runner 미로 게임",
+    "categoryId": "game",
+    "summary": "HTML로 실행 가능한 미로 탐색 게임 프로토타입입니다.",
+    "intention": "간단한 조작과 즉각적인 피드백을 통해 미로 탐색의 목표, 이동 판단, 실패/성공 흐름을 검증하기 위해 제작한 HTML 게임입니다.\n\n별도 설치 없이 브라우저에서 바로 실행되도록 구성해 플레이 감각을 빠르게 확인할 수 있게 했습니다.",
+    "thumbnailUrl": "/assets/thumbnails/webgl-game.svg",
+    "prototypeUrl": "/assets/webgl/maze_game/maze_game.html",
+    "order": 7
+  },
+  {
+    "id": "color-match-rush-html-game",
+    "title": "Color Match Rush HTML 게임",
+    "categoryId": "game",
+    "summary": "제한 시간 안에 목표 색상과 같은 버튼을 선택하는 반응형 HTML 미니게임입니다.",
+    "intention": "짧은 세션 안에서 목표 인지, 빠른 판단, 즉각적인 성공/실패 피드백을 검증하기 위해 제작한 HTML 게임입니다.\n\n단일 HTML 파일로 구성해 별도 빌드나 설치 없이 브라우저에서 바로 실행할 수 있으며, 포트폴리오 검토자가 간단한 조작 루프를 즉시 체험할 수 있게 했습니다.",
+    "thumbnailUrl": "/assets/thumbnails/webgl-game.svg",
+    "prototypeUrl": "/assets/html-games/color-match-rush/index.html",
+    "order": 8
+  },
+  {
+    "id": "penalty-policy-simulation",
+    "title": "패널티 무효권 정책 시뮬레이터",
+    "categoryId": "game",
+    "summary": "패널티 무효권 도입 조건과 운영 리스크를 수치로 비교하는 HTML 시뮬레이터입니다.",
+    "intention": "패널티 완화 시스템이 실제 운영 지표에 어떤 영향을 줄 수 있는지 검토하기 위해 정책 변수와 KPI를 연결한 시뮬레이션 형태로 제작했습니다.\n\n기획안의 장점과 리스크를 정성 설명에만 의존하지 않고, 조건 변경에 따른 결과 차이를 한 화면에서 비교할 수 있게 구성했습니다.",
+    "thumbnailUrl": "/assets/thumbnails/penalty-nullification-ticket.png",
+    "prototypeUrl": "/assets/prototypes/Penalty simulation.html",
+    "order": 9
+  },
+  {
+    "id": "lostark-core-flow-prototype",
+    "title": "로스트아크 코어 콘텐츠 진입 플로우 프로토타입",
+    "categoryId": "prototype",
+    "summary": "코어 콘텐츠 진입 흐름의 기존안과 개선안을 직접 비교할 수 있는 HTML 프로토타입입니다.",
+    "intention": "문서에서 제안한 콘텐츠 진입 개선안을 실제 화면 흐름으로 재현해, 클릭 수와 정보 탐색 부담이 어떻게 달라지는지 검증하기 위해 제작했습니다.\n\n기존 플로우와 개선 플로우를 나란히 체험할 수 있도록 구성해 개선안의 체감 효과를 명확히 보여주는 데 초점을 맞췄습니다.",
+    "thumbnailUrl": "/assets/thumbnails/lostark-core-content-flow.png",
+    "prototypeUrl": "/assets/prototypes/로스트아크_코어 콘텐츠 진입 플로우 개선_프로토타입.html",
+    "order": 10
+  },
+  {
+    "id": "aspecter-skill-prototype",
+    "title": "이터널리턴 아스펙터 스킬 시뮬레이터",
+    "categoryId": "prototype",
+    "summary": "신규 캐릭터 스킬 구조와 전투 상호작용을 확인할 수 있는 HTML 스킬 시뮬레이터입니다.",
+    "intention": "캐릭터의 스킬 정보와 조작 흐름을 단순 문서가 아니라 상호작용 가능한 형태로 정리해, 전투 설계 의도를 빠르게 확인할 수 있도록 제작했습니다.\n\n스킬 구성, 역할, 피드백을 한 화면에서 탐색할 수 있게 해 검토자가 캐릭터 콘셉트와 플레이 감각을 함께 이해하도록 했습니다.",
+    "thumbnailUrl": "/assets/thumbnails/webgl-game.svg",
+    "prototypeUrl": "/assets/prototypes/아스펙터_스킬_프로토타입.html",
+    "order": 11
+  },
+  {
+    "id": "bound-wall-web-prototype",
+    "title": "Bound Wall 웹 프로토타입",
+    "categoryId": "game",
+    "summary": "벽 충돌과 반사 흐름을 중심으로 이동 규칙, 조작 피드백, 스테이지 진행 감각을 확인하는 HTML 프로토타입입니다.",
+    "intention": "Bound Wall의 핵심 규칙을 문서 설명에 그치지 않고 직접 조작 가능한 화면으로 검증하기 위해 제작한 프로토타입입니다. 벽과의 충돌, 이동 타이밍, 실패와 재시도 흐름이 플레이 감각에 어떤 영향을 주는지 빠르게 확인할 수 있도록 구성했습니다.\n\n단일 HTML 파일로 실행되도록 정리해 별도 설치 없이 브라우저에서 바로 열 수 있으며, 포트폴리오 검토자가 조작 기반의 기획 의도를 즉시 체험할 수 있게 했습니다.",
+    "thumbnailUrl": "/assets/thumbnails/webgl-game.svg",
+    "prototypeUrl": "/assets/prototypes/Bound wall_web.html",
+    "order": 12
+  },
+  {
+    "id": "boundwall-unity-webgl",
+    "title": "Bound Wall Unity 빌드",
+    "categoryId": "game",
+    "summary": "Unity WebGL로 제작한 Bound Wall 실행 빌드입니다. 벽 충돌, 반사 이동, 재시도 흐름을 브라우저에서 바로 확인할 수 있습니다.",
+    "intention": "HTML 프로토타입에서 검증한 Bound Wall의 핵심 조작 감각을 Unity 환경으로 옮겨 실제 빌드 단위의 플레이 경험을 확인하기 위해 제작했습니다.\n\nWebGL 빌드로 제공해 별도 설치 없이 브라우저에서 바로 실행할 수 있으며, 조작 피드백과 스테이지 진행감을 직접 확인할 수 있게 했습니다.",
+    "thumbnailUrl": "/assets/thumbnails/webgl-game.svg",
+    "webglUrl": "/assets/webgl/Boundwall_Unity/index.html",
+    "order": 13
+  }
+]

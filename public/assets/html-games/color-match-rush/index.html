@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Color Match Rush</title>
+    <style>
+      :root {
+        color: #17212b;
+        background: #f7f8fa;
+        font-family: Inter, Pretendard, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        --ink: #17212b;
+        --muted: #627183;
+        --panel: #ffffff;
+        --line: #d9dee5;
+        --blue: #2563eb;
+        --green: #16a34a;
+        --red: #dc2626;
+        --yellow: #d97706;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        align-items: center;
+        display: flex;
+        justify-content: center;
+        margin: 0;
+        min-height: 100vh;
+        padding: 18px;
+      }
+
+      main {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        box-shadow: 0 18px 45px rgba(31, 43, 54, 0.1);
+        max-width: 760px;
+        padding: clamp(18px, 4vw, 32px);
+        width: 100%;
+      }
+
+      header {
+        align-items: center;
+        display: flex;
+        gap: 16px;
+        justify-content: space-between;
+        margin-bottom: 24px;
+      }
+
+      h1 {
+        font-size: clamp(1.7rem, 5vw, 2.6rem);
+        line-height: 1;
+        margin: 0;
+      }
+
+      .stats {
+        display: flex;
+        gap: 8px;
+      }
+
+      .stat {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        min-width: 82px;
+        padding: 10px 12px;
+        text-align: center;
+      }
+
+      .stat strong {
+        display: block;
+        font-size: 1.5rem;
+      }
+
+      .stat span {
+        color: var(--muted);
+        font-size: 0.78rem;
+        font-weight: 700;
+      }
+
+      .prompt {
+        background: #edf1f5;
+        border-radius: 8px;
+        margin-bottom: 18px;
+        padding: 18px;
+        text-align: center;
+      }
+
+      .prompt span {
+        color: var(--muted);
+        display: block;
+        font-size: 0.9rem;
+        font-weight: 700;
+        margin-bottom: 8px;
+      }
+
+      .prompt strong {
+        display: block;
+        font-size: clamp(2.4rem, 10vw, 4.4rem);
+        line-height: 1;
+      }
+
+      .grid {
+        display: grid;
+        gap: 12px;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      button {
+        border: 0;
+        border-radius: 8px;
+        color: white;
+        cursor: pointer;
+        font: inherit;
+        font-size: 1.1rem;
+        font-weight: 800;
+        min-height: 92px;
+        transition:
+          opacity 120ms ease,
+          transform 120ms ease;
+      }
+
+      button:hover {
+        transform: translateY(-1px);
+      }
+
+      button:disabled {
+        cursor: default;
+        opacity: 0.55;
+        transform: none;
+      }
+
+      .blue {
+        background: var(--blue);
+      }
+
+      .green {
+        background: var(--green);
+      }
+
+      .red {
+        background: var(--red);
+      }
+
+      .yellow {
+        background: var(--yellow);
+      }
+
+      .controls {
+        align-items: center;
+        display: flex;
+        gap: 10px;
+        justify-content: space-between;
+        margin-top: 18px;
+      }
+
+      .message {
+        color: var(--muted);
+        font-weight: 700;
+        margin: 0;
+      }
+
+      .restart {
+        background: var(--ink);
+        min-height: 44px;
+        padding: 0 16px;
+      }
+
+      @media (max-width: 560px) {
+        header,
+        .controls {
+          align-items: stretch;
+          flex-direction: column;
+        }
+
+        .stats {
+          width: 100%;
+        }
+
+        .stat {
+          flex: 1;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>Color Match Rush</h1>
+        <div class="stats" aria-label="게임 상태">
+          <div class="stat"><strong id="score">0</strong><span>점수</span></div>
+          <div class="stat"><strong id="time">30</strong><span>시간</span></div>
+        </div>
+      </header>
+
+      <section class="prompt" aria-live="polite">
+        <span>아래 버튼 중 같은 색을 선택하세요</span>
+        <strong id="target">BLUE</strong>
+      </section>
+
+      <section class="grid" aria-label="색상 선택">
+        <button class="blue" data-color="BLUE" type="button">BLUE</button>
+        <button class="green" data-color="GREEN" type="button">GREEN</button>
+        <button class="red" data-color="RED" type="button">RED</button>
+        <button class="yellow" data-color="YELLOW" type="button">YELLOW</button>
+      </section>
+
+      <div class="controls">
+        <p class="message" id="message">정답은 +1점, 오답은 -1점입니다.</p>
+        <button class="restart" id="restart" type="button">다시 시작</button>
+      </div>
+    </main>
+
+    <script>
+      const colors = ['BLUE', 'GREEN', 'RED', 'YELLOW'];
+      const target = document.getElementById('target');
+      const scoreEl = document.getElementById('score');
+      const timeEl = document.getElementById('time');
+      const message = document.getElementById('message');
+      const buttons = Array.from(document.querySelectorAll('[data-color]'));
+      const restart = document.getElementById('restart');
+      let score = 0;
+      let time = 30;
+      let current = 'BLUE';
+      let timer = null;
+
+      function nextTarget() {
+        current = colors[Math.floor(Math.random() * colors.length)];
+        target.textContent = current;
+        target.style.color = getComputedStyle(document.documentElement).getPropertyValue(`--${current.toLowerCase()}`);
+      }
+
+      function setPlaying(isPlaying) {
+        buttons.forEach((button) => {
+          button.disabled = !isPlaying;
+        });
+      }
+
+      function start() {
+        window.clearInterval(timer);
+        score = 0;
+        time = 30;
+        scoreEl.textContent = String(score);
+        timeEl.textContent = String(time);
+        message.textContent = '정답은 +1점, 오답은 -1점입니다.';
+        setPlaying(true);
+        nextTarget();
+        timer = window.setInterval(() => {
+          time -= 1;
+          timeEl.textContent = String(time);
+          if (time <= 0) {
+            window.clearInterval(timer);
+            setPlaying(false);
+            message.textContent = `종료! 최종 점수는 ${score}점입니다.`;
+          }
+        }, 1000);
+      }
+
+      buttons.forEach((button) => {
+        button.addEventListener('click', () => {
+          const correct = button.dataset.color === current;
+          score += correct ? 1 : -1;
+          scoreEl.textContent = String(score);
+          message.textContent = correct ? '정답입니다.' : '다시 집중하세요.';
+          nextTarget();
+        });
+      });
+
+      restart.addEventListener('click', start);
+      start();
+    </script>
+  </body>
+</html>

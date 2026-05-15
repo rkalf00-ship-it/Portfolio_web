@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" role="img" aria-label="Combat loop planning thumbnail">
+  <rect width="960" height="600" fill="#eef2f6"/>
+  <rect x="72" y="78" width="816" height="444" rx="18" fill="#fff" stroke="#cfd7df"/>
+  <text x="112" y="148" fill="#263747" font-family="Arial, sans-serif" font-size="36" font-weight="700">Combat Growth Loop</text>
+  <g fill="none" stroke="#4d6478" stroke-width="12" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M240 330c0-96 78-174 174-174 52 0 98 22 130 58"/>
+    <path d="M558 202h-78v78"/>
+    <path d="M720 306c0 96-78 174-174 174-52 0-98-22-130-58"/>
+    <path d="M402 434h78v-78"/>
+  </g>
+  <g fill="#edf1f5" stroke="#cfd7df" stroke-width="4">
+    <rect x="142" y="396" width="190" height="54" rx="10"/>
+    <rect x="386" y="396" width="190" height="54" rx="10"/>
+    <rect x="630" y="396" width="190" height="54" rx="10"/>
+  </g>
+  <g fill="#526678" font-family="Arial, sans-serif" font-size="20" font-weight="700">
+    <text x="188" y="431">Battle</text>
+    <text x="430" y="431">Reward</text>
+    <text x="674" y="431">Upgrade</text>
+  </g>
+</svg>

@@ -1,0 +1,1901 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>이터널리턴 아스펙터 - 스킬 시뮬레이터</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+<style>
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  body {
+    font-family: 'Noto Sans KR', sans-serif;
+    background: linear-gradient(135deg, #2c2c2c, #3a3a3a);
+    color: #e0e0e0;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  .container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+
+  /* 헤더 섹션 */
+  .header {
+    text-align: center;
+    padding: 40px 0;
+    background: linear-gradient(180deg, rgba(0,0,0,0.3), transparent);
+    margin-bottom: 30px;
+    position: relative;
+  }
+
+  .header::before {
+    content: '♠ ♣ ♥ ♦';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 120px;
+    opacity: 0.03;
+    letter-spacing: 30px;
+  }
+
+  .header h1 {
+    font-size: 48px;
+    font-weight: 900;
+    color: #fff;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+    margin-bottom: 10px;
+    letter-spacing: 2px;
+  }
+
+  .header .subtitle {
+    font-size: 20px;
+    color: #b0b0b0;
+    font-weight: 500;
+  }
+
+  /* 메인 레이아웃 */
+  .main-layout {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 30px;
+    margin-bottom: 40px;
+  }
+
+  /* 캐릭터 정보 패널 */
+  .character-panel {
+    background: rgba(50, 50, 50, 0.9);
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+    border: 1px solid rgba(255,255,255,0.1);
+  }
+
+  .character-panel h2 {
+    font-size: 24px;
+    color: #fff;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #666;
+  }
+
+  .stat-group {
+    margin-bottom: 20px;
+  }
+
+  .stat-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    padding: 8px 12px;
+    background: rgba(0,0,0,0.2);
+    border-radius: 6px;
+    transition: background 0.3s;
+  }
+
+  .stat-item:hover {
+    background: rgba(0,0,0,0.3);
+  }
+
+  .stat-label {
+    font-size: 14px;
+    color: #b0b0b0;
+    font-weight: 500;
+  }
+
+  .stat-value {
+    font-size: 16px;
+    color: #fff;
+    font-weight: 600;
+  }
+
+  .level-control {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 20px;
+    padding: 15px;
+    background: rgba(0,0,0,0.3);
+    border-radius: 8px;
+  }
+
+  .level-control label {
+    font-size: 14px;
+    color: #b0b0b0;
+    font-weight: 500;
+  }
+
+  .level-slider {
+    flex: 1;
+    -webkit-appearance: none;
+    appearance: none;
+    height: 6px;
+    border-radius: 3px;
+    background: #4a4a4a;
+    outline: none;
+  }
+
+  .level-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #888;
+    cursor: pointer;
+    transition: background 0.3s;
+  }
+
+  .level-slider::-webkit-slider-thumb:hover {
+    background: #aaa;
+  }
+
+  .level-display {
+    font-size: 18px;
+    font-weight: 700;
+    color: #fff;
+    min-width: 30px;
+    text-align: center;
+  }
+
+  /* 시뮬레이션 영역 */
+  .simulation-area {
+    background: rgba(40, 40, 40, 0.9);
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+    border: 1px solid rgba(255,255,255,0.1);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .grid-container {
+    position: relative;
+    height: 600px;
+    background: repeating-linear-gradient(
+      0deg,
+      rgba(255,255,255,0.03) 0px,
+      transparent 1px,
+      transparent 59px,
+      rgba(255,255,255,0.03) 60px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      rgba(255,255,255,0.03) 0px,
+      transparent 1px,
+      transparent 59px,
+      rgba(255,255,255,0.03) 60px
+    );
+    cursor: crosshair;
+    position: relative;
+  }
+
+  /* 플레이어 마커 */
+  .player {
+    position: absolute;
+    width: 40px;
+    height: 40px;
+    background: radial-gradient(circle, #4CAF50, #2E7D32);
+    border-radius: 50%;
+    border: 3px solid #81C784;
+    box-shadow: 0 0 20px rgba(76, 175, 80, 0.5);
+    transform: translate(-50%, -50%);
+    z-index: 10;
+    transition: all 0.3s;
+  }
+
+  .player::before {
+    content: 'P';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-weight: 700;
+    color: white;
+    font-size: 18px;
+  }
+
+  /* 적 마커 */
+  .enemy {
+    position: absolute;
+    width: 35px;
+    height: 35px;
+    background: radial-gradient(circle, #f44336, #b71c1c);
+    border-radius: 50%;
+    border: 2px solid #ef5350;
+    transform: translate(-50%, -50%);
+    cursor: pointer;
+    z-index: 5;
+    transition: all 0.3s;
+  }
+
+  .enemy::before {
+    content: 'E';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-weight: 600;
+    color: white;
+    font-size: 14px;
+  }
+
+  .enemy.marked {
+    box-shadow: 0 0 30px rgba(0, 255, 255, 0.8);
+  }
+
+  .enemy.marked::after {
+    content: '♠';
+    position: absolute;
+    top: -25px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 20px;
+    color: cyan;
+    animation: float 2s infinite;
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateX(-50%) translateY(0); }
+    50% { transform: translateX(-50%) translateY(-5px); }
+  }
+
+  .enemy.stunned {
+    animation: stun 0.5s;
+    box-shadow: 0 0 40px rgba(255, 255, 0, 0.8);
+  }
+
+  @keyframes stun {
+    0%, 100% { transform: translate(-50%, -50%) rotate(0deg); }
+    25% { transform: translate(-50%, -50%) rotate(10deg); }
+    75% { transform: translate(-50%, -50%) rotate(-10deg); }
+  }
+
+  .enemy.slowed {
+    box-shadow: 0 0 30px rgba(33, 150, 243, 0.8);
+    animation: slowPulse 2s;
+  }
+
+  @keyframes slowPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+  }
+
+  .enemy.dead {
+    background: radial-gradient(circle, #666, #333);
+    border-color: #999;
+    opacity: 0.5;
+  }
+
+  .enemy.dead::before {
+    content: 'D';
+  }
+
+  /* 영혼 오브 */
+  .soul-orb {
+    position: absolute;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(156, 39, 176, 0.8), rgba(156, 39, 176, 0.2));
+    border: 2px solid #9C27B0;
+    box-shadow: 0 0 30px rgba(156, 39, 176, 0.6);
+    transform: translate(-50%, -50%);
+    cursor: pointer;
+    z-index: 6;
+    animation: soulPulse 2s infinite;
+  }
+
+  .soul-orb::before {
+    content: '魂';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 16px;
+    color: white;
+    font-weight: bold;
+  }
+
+  @keyframes soulPulse {
+    0%, 100% { 
+      transform: translate(-50%, -50%) scale(1);
+      opacity: 0.8;
+    }
+    50% { 
+      transform: translate(-50%, -50%) scale(1.2);
+      opacity: 1;
+    }
+  }
+
+  .soul-orb.collecting {
+    animation: soulCollect 1s forwards;
+  }
+
+  @keyframes soulCollect {
+    0% { 
+      transform: translate(-50%, -50%) scale(1);
+      opacity: 1;
+    }
+    100% { 
+      transform: translate(-50%, -50%) scale(0);
+      opacity: 0;
+    }
+  }
+
+  /* 슬로우/스턴 효과 표시 */
+  .status-effect {
+    position: absolute;
+    bottom: -25px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 10px;
+    font-weight: 600;
+    color: white;
+    z-index: 7;
+  }
+
+  .status-effect.slow {
+    background: linear-gradient(135deg, #2196F3, #1976D2);
+  }
+
+  .status-effect.stun {
+    background: linear-gradient(135deg, #FFD700, #FFA500);
+  }
+
+  /* 스킬 이펙트 */
+  .skill-effect {
+    position: absolute;
+    pointer-events: none;
+    z-index: 8;
+  }
+
+  .projectile {
+    width: 25px;
+    height: 35px;
+    background: linear-gradient(135deg, #FFD700, #FFA500);
+    border-radius: 3px;
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.8);
+    position: relative;
+    pointer-events: none;
+  }
+
+  .projectile::before {
+    content: '♠';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 20px;
+    color: #8B4513;
+    font-weight: bold;
+    animation: cardSpin 1s linear infinite;
+  }
+
+  @keyframes cardSpin {
+    from { transform: translate(-50%, -50%) rotateY(0deg); }
+    to { transform: translate(-50%, -50%) rotateY(360deg); }
+  }
+
+  @keyframes spin {
+    from { transform: translate(-50%, -50%) rotate(0deg); }
+    to { transform: translate(-50%, -50%) rotate(360deg); }
+  }
+
+  .aoe-indicator {
+    border-radius: 50%;
+    border: 3px dashed rgba(255, 100, 100, 0.8);
+    background: rgba(255, 100, 100, 0.2);
+    animation: pulse 0.5s;
+  }
+
+  @keyframes pulse {
+    0% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
+    50% { opacity: 1; }
+    100% { transform: translate(-50%, -50%) scale(1); opacity: 0.8; }
+  }
+
+  .aoe-explosion {
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(138, 43, 226, 0.8), transparent);
+    animation: explode 0.6s;
+  }
+
+  @keyframes explode {
+    0% { transform: translate(-50%, -50%) scale(0); opacity: 1; }
+    100% { transform: translate(-50%, -50%) scale(1.5); opacity: 0; }
+  }
+
+  .dash-trail {
+    height: 3px;
+    background: linear-gradient(90deg, transparent, rgba(150, 150, 150, 0.8), transparent);
+    animation: fadeOut 0.5s forwards;
+  }
+
+  .card-trap {
+    width: 25px;
+    height: 35px;
+    background: linear-gradient(135deg, #FFD700, #FFA500);
+    clip-path: polygon(50% 0%, 100% 38%, 82% 100%, 50% 85%, 18% 100%, 0% 38%);
+    box-shadow: 0 0 15px rgba(255, 215, 0, 0.6);
+    animation: cardFloat 2s infinite;
+  }
+
+  @keyframes cardFloat {
+    0%, 100% { transform: translate(-50%, -50%) translateY(0) rotate(0deg); }
+    50% { transform: translate(-50%, -50%) translateY(-10px) rotate(180deg); }
+  }
+
+  .transform-effect {
+    border-radius: 50%;
+    border: 4px solid rgba(128, 0, 128, 0.8);
+    background: radial-gradient(circle, rgba(128, 0, 128, 0.3), transparent);
+    animation: transformPulse 1s;
+  }
+
+  @keyframes transformPulse {
+    0% { transform: translate(-50%, -50%) scale(0); opacity: 1; }
+    50% { transform: translate(-50%, -50%) scale(2); opacity: 0.5; }
+    100% { transform: translate(-50%, -50%) scale(3); opacity: 0; }
+  }
+
+  /* 스킬 버튼 */
+  .skills-container {
+    padding: 25px;
+    background: rgba(30, 30, 30, 0.9);
+    border-top: 1px solid rgba(255,255,255,0.1);
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+  }
+
+  .skill-button {
+    width: 80px;
+    height: 80px;
+    border: 2px solid #666;
+    background: linear-gradient(135deg, #3a3a3a, #2a2a2a);
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .skill-button:hover:not(:disabled) {
+    border-color: #888;
+    background: linear-gradient(135deg, #4a4a4a, #3a3a3a);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+  }
+
+  .skill-button:active:not(:disabled) {
+    transform: translateY(0);
+  }
+
+  .skill-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .skill-button.cooldown::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.7);
+    animation: cooldownFill var(--cooldown) linear forwards;
+  }
+
+  @keyframes cooldownFill {
+    from { transform: translateY(0); }
+    to { transform: translateY(100%); }
+  }
+
+  .skill-key {
+    font-size: 24px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 4px;
+  }
+
+  .skill-name {
+    font-size: 10px;
+    color: #999;
+    text-align: center;
+    font-weight: 500;
+  }
+
+  .cooldown-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 20px;
+    font-weight: 700;
+    color: #fff;
+    text-shadow: 0 0 4px rgba(0,0,0,0.8);
+    z-index: 2;
+  }
+
+  /* 정보 패널 */
+  .info-panel {
+    background: rgba(50, 50, 50, 0.9);
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+    border: 1px solid rgba(255,255,255,0.1);
+  }
+
+  .info-panel h2 {
+    font-size: 24px;
+    color: #fff;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #666;
+  }
+
+  .skill-info {
+    display: none;
+    animation: fadeIn 0.3s;
+  }
+
+  .skill-info.active {
+    display: block;
+  }
+
+  @keyframes fadeOut {
+    from { opacity: 1; }
+    to { opacity: 0; }
+  }
+
+  @keyframes expandFade {
+    0% {
+      width: 20px;
+      height: 20px;
+      opacity: 1;
+    }
+    100% {
+      width: 40px;
+      height: 40px;
+      opacity: 0;
+    }
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .skill-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 15px;
+  }
+
+  .skill-description {
+    font-size: 14px;
+    line-height: 1.6;
+    color: #b0b0b0;
+    margin-bottom: 20px;
+  }
+
+  .skill-stats {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+
+  .skill-stat {
+    padding: 10px;
+    background: rgba(0,0,0,0.2);
+    border-radius: 6px;
+  }
+
+  .skill-stat-label {
+    font-size: 12px;
+    color: #999;
+    margin-bottom: 4px;
+  }
+
+  .skill-stat-value {
+    font-size: 16px;
+    color: #fff;
+    font-weight: 600;
+  }
+
+  /* 컨트롤 설명 */
+  .controls {
+    background: rgba(30, 30, 30, 0.9);
+    border-radius: 8px;
+    padding: 20px;
+    margin-top: 20px;
+  }
+
+  .controls h3 {
+    font-size: 18px;
+    color: #fff;
+    margin-bottom: 15px;
+  }
+
+  .control-item {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+    font-size: 14px;
+    color: #b0b0b0;
+  }
+
+  .control-key {
+    display: inline-block;
+    padding: 4px 8px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 4px;
+    font-weight: 600;
+    color: #fff;
+    min-width: 30px;
+    text-align: center;
+  }
+
+  /* 영혼 슬롯 */
+  .soul-slot {
+    margin-top: 20px;
+    padding: 15px;
+    background: rgba(0,0,0,0.3);
+    border-radius: 8px;
+    text-align: center;
+  }
+
+  .soul-slot-title {
+    font-size: 14px;
+    color: #999;
+    margin-bottom: 10px;
+  }
+
+  .soul-container {
+    width: 60px;
+    height: 80px;
+    margin: 0 auto;
+    border: 2px dashed #666;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,0.2);
+  }
+
+  .soul-container.filled {
+    border-color: #9C27B0;
+    background: radial-gradient(circle, rgba(156, 39, 176, 0.2), transparent);
+    box-shadow: 0 0 20px rgba(156, 39, 176, 0.4);
+  }
+
+  .soul-card {
+    width: 40px;
+    height: 60px;
+    background: linear-gradient(135deg, #9C27B0, #7B1FA2);
+    clip-path: polygon(50% 0%, 100% 38%, 82% 100%, 50% 85%, 18% 100%, 0% 38%);
+    animation: soulFloat 3s infinite;
+  }
+
+  @keyframes soulFloat {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    50% { transform: translateY(-5px) rotate(5deg); }
+  }
+
+  /* 리셋 버튼 */
+  .reset-button {
+    margin-top: 20px;
+    width: 100%;
+    padding: 12px;
+    background: linear-gradient(135deg, #666, #555);
+    border: 1px solid #888;
+    border-radius: 8px;
+    color: #fff;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s;
+  }
+
+  .reset-button:hover {
+    background: linear-gradient(135deg, #777, #666);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  }
+
+  /* 쿨타임 토글 */
+  .cooldown-toggle {
+    margin-top: 15px;
+    padding: 15px;
+    background: rgba(0,0,0,0.3);
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .toggle-container {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .toggle-container input[type="checkbox"] {
+    display: none;
+  }
+
+  .toggle-slider {
+    width: 50px;
+    height: 26px;
+    background: #4a4a4a;
+    border-radius: 13px;
+    position: relative;
+    transition: all 0.3s;
+    border: 1px solid #666;
+  }
+
+  .toggle-slider::before {
+    content: '';
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    background: #999;
+    border-radius: 50%;
+    top: 2px;
+    left: 3px;
+    transition: all 0.3s;
+  }
+
+  .toggle-container input[type="checkbox"]:checked + .toggle-slider {
+    background: linear-gradient(135deg, #4CAF50, #45a049);
+    border-color: #4CAF50;
+  }
+
+  .toggle-container input[type="checkbox"]:checked + .toggle-slider::before {
+    transform: translateX(24px);
+    background: #fff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  }
+
+  .toggle-label {
+    font-size: 14px;
+    color: #b0b0b0;
+    font-weight: 500;
+  }
+
+  .toggle-status {
+    font-size: 16px;
+    font-weight: 700;
+    padding: 4px 12px;
+    border-radius: 6px;
+    background: rgba(255,255,255,0.1);
+    color: #999;
+    transition: all 0.3s;
+  }
+
+  .toggle-status.active {
+    background: linear-gradient(135deg, #4CAF50, #45a049);
+    color: #fff;
+    box-shadow: 0 0 10px rgba(76, 175, 80, 0.4);
+  }
+
+  /* 반응형 디자인 */
+  @media (max-width: 1200px) {
+    .main-layout {
+      grid-template-columns: 1fr;
+    }
+    
+    .grid-container {
+      height: 400px;
+    }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <!-- 헤더 -->
+  <div class="header">
+    <h1>ASPECTER SKILL SIMULATOR</h1>
+    <div class="subtitle">이터널리턴 - 아스펙터 스킬 시뮬레이터</div>
+  </div>
+
+  <!-- 메인 레이아웃 -->
+  <div class="main-layout">
+    <!-- 왼쪽 패널: 캐릭터 정보 -->
+    <div class="character-panel">
+      <h2>캐릭터 정보</h2>
+      
+      <!-- 레벨 조절 -->
+      <div class="level-control">
+        <label>레벨</label>
+        <input type="range" class="level-slider" id="levelSlider" min="1" max="18" value="1">
+        <div class="level-display" id="levelDisplay">1</div>
+      </div>
+
+      <!-- 스탯 표시 -->
+      <div class="stat-group">
+        <div class="stat-item">
+          <span class="stat-label">체력</span>
+          <span class="stat-value" id="hpStat">580</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">공격력</span>
+          <span class="stat-value" id="adStat">55</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">방어력</span>
+          <span class="stat-value" id="defStat">25</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">스킬 증폭</span>
+          <span class="stat-value" id="ampStat">100</span>
+        </div>
+      </div>
+
+      <!-- 영혼 슬롯 -->
+      <div class="soul-slot">
+        <div class="soul-slot-title">영혼 슬롯</div>
+        <div class="soul-container" id="soulSlot">
+          <!-- 영혼 카드가 여기에 추가됨 -->
+        </div>
+      </div>
+
+      <!-- 리셋 버튼 -->
+      <button class="reset-button" onclick="resetSimulation()">시뮬레이션 리셋</button>
+
+      <!-- 쿨타임 초기화 토글 -->
+      <div class="cooldown-toggle">
+        <label class="toggle-container">
+          <input type="checkbox" id="cooldownToggle" onchange="toggleCooldownReset()">
+          <span class="toggle-slider"></span>
+          <span class="toggle-label">쿨타임 즉시 초기화</span>
+        </label>
+        <div class="toggle-status" id="toggleStatus">OFF</div>
+      </div>
+    </div>
+
+    <!-- 오른쪽 패널: 시뮬레이션 영역 -->
+    <div class="simulation-area">
+      <div class="grid-container" id="gridContainer">
+        <!-- 플레이어 -->
+        <div class="player" id="player" style="left: 50%; top: 50%;"></div>
+      </div>
+      
+      <!-- 스킬 버튼 -->
+      <div class="skills-container">
+        <button class="skill-button" id="skillQ" onclick="useSkill('Q')">
+          <span class="skill-key">Q</span>
+          <span class="skill-name">마크</span>
+        </button>
+        <button class="skill-button" id="skillW" onclick="useSkill('W')">
+          <span class="skill-key">W</span>
+          <span class="skill-name">바인드</span>
+        </button>
+        <button class="skill-button" id="skillE" onclick="useSkill('E')">
+          <span class="skill-key">E</span>
+          <span class="skill-name">페이드</span>
+        </button>
+        <button class="skill-button" id="skillR" onclick="useSkill('R')">
+          <span class="skill-key">R</span>
+          <span class="skill-name">변신</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 스킬 정보 패널 -->
+  <div class="info-panel">
+    <h2>스킬 정보</h2>
+    
+    <!-- Q 스킬 정보 -->
+    <div class="skill-info active" id="infoQ">
+      <div class="skill-title">Q - 마크 오브 페이트</div>
+      <div class="skill-description">
+        지정한 방향으로 금빛 카드를 투사하여 첫 번째 적중한 적에게 피해를 입히고 3초간 표식을 부여합니다. 
+        표식이 있는 적은 다른 스킬에 추가 효과를 받습니다.
+      </div>
+      <div class="skill-stats">
+        <div class="skill-stat">
+          <div class="skill-stat-label">피해량</div>
+          <div class="skill-stat-value" id="qDamage">60</div>
+        </div>
+        <div class="skill-stat">
+          <div class="skill-stat-label">사거리</div>
+          <div class="skill-stat-value">650</div>
+        </div>
+        <div class="skill-stat">
+          <div class="skill-stat-label">쿨다운</div>
+          <div class="skill-stat-value" id="qCooldown">7초</div>
+        </div>
+        <div class="skill-stat">
+          <div class="skill-stat-label">표식 지속</div>
+          <div class="skill-stat-value">3초</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- W 스킬 정보 -->
+    <div class="skill-info" id="infoW">
+      <div class="skill-title">W - 소울 바인드</div>
+      <div class="skill-description">
+        지정한 위치에 카드 마법진을 생성합니다. 0.5초 후 범위 내 모든 적에게 피해를 입히고 2초간 이동 속도를 30% 감소시킵니다. 
+        표식이 있는 적은 대신 1초간 기절합니다.
+      </div>
+      <div class="skill-stats">
+        <div class="skill-stat">
+          <div class="skill-stat-label">피해량</div>
+          <div class="skill-stat-value" id="wDamage">70</div>
+        </div>
+        <div class="skill-stat">
+          <div class="skill-stat-label">범위</div>
+          <div class="skill-stat-value">반경 300</div>
+        </div>
+        <div class="skill-stat">
+          <div class="skill-stat-label">쿨다운</div>
+          <div class="skill-stat-value" id="wCooldown">12초</div>
+        </div>
+        <div class="skill-stat">
+          <div class="skill-stat-label">기절 시간</div>
+          <div class="skill-stat-value">1초</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- E 스킬 정보 -->
+    <div class="skill-info" id="infoE">
+      <div class="skill-title">E - 페이드 스텝</div>
+      <div class="skill-description">
+        지정한 방향으로 순간이동하며 경로에 3개의 카드 트랩을 설치합니다. 카드를 밟은 적은 피해를 입고 표식이 부여됩니다. 
+        2회 충전되며, 충전 시간은 레벨에 따라 감소합니다.
+      </div>
+      <div class="skill-stats">
+        <div class="skill-stat">
+          <div class="skill-stat-label">피해량</div>
+          <div class="skill-stat-value" id="eDamage">50</div>
+        </div>
+        <div class="skill-stat">
+          <div class="skill-stat-label">이동 거리</div>
+          <div class="skill-stat-value">400</div>
+        </div>
+        <div class="skill-stat">
+          <div class="skill-stat-label">쿨다운</div>
+          <div class="skill-stat-value" id="eCooldown">14초</div>
+        </div>
+        <div class="skill-stat">
+          <div class="skill-stat-label">충전 수</div>
+          <div class="skill-stat-value">2회</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- R 스킬 정보 -->
+    <div class="skill-info" id="infoR">
+      <div class="skill-title">R - 아스펙트 시프트</div>
+      <div class="skill-description">
+        수집한 영혼으로 변신합니다. 1초간 시전 후 주변 적에게 피해를 입히고 시야를 40% 감소시킵니다. 
+        변신 중에는 해당 캐릭터의 기본 스킬 중 하나를 사용할 수 있습니다.
+      </div>
+      <div class="skill-stats">
+        <div class="skill-stat">
+          <div class="skill-stat-label">피해량</div>
+          <div class="skill-stat-value" id="rDamage">100</div>
+        </div>
+        <div class="skill-stat">
+          <div class="skill-stat-label">지속 시간</div>
+          <div class="skill-stat-value" id="rDuration">15초</div>
+        </div>
+        <div class="skill-stat">
+          <div class="skill-stat-label">쿨다운</div>
+          <div class="skill-stat-value" id="rCooldown">90초</div>
+        </div>
+        <div class="skill-stat">
+          <div class="skill-stat-label">범위</div>
+          <div class="skill-stat-value">반경 400</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 컨트롤 설명 -->
+  <div class="controls">
+    <h3>조작 방법</h3>
+    <div class="control-item">
+      <span class="control-key">좌클릭</span>
+      <span>적 생성 (최대 5명) / 적 제거</span>
+    </div>
+    <div class="control-item">
+      <span class="control-key">우클릭</span>
+      <span>플레이어 이동 / 영혼 오브 수집 (100 거리 이내)</span>
+    </div>
+    <div class="control-item">
+      <span class="control-key">Q</span>
+      <span>마크 오브 페이트 - 마우스 방향으로 카드 투사체 발사</span>
+    </div>
+    <div class="control-item">
+      <span class="control-key">W</span>
+      <span>소울 바인드 - 마우스 위치에 광역 스킬 (슬로우/스턴)</span>
+    </div>
+    <div class="control-item">
+      <span class="control-key">E</span>
+      <span>페이드 스텝 - 마우스 방향으로 순간이동</span>
+    </div>
+    <div class="control-item">
+      <span class="control-key">R</span>
+      <span>아스펙트 시프트 - 영혼이 있을 때 변신</span>
+    </div>
+  </div>
+</div>
+
+<script>
+// 게임 상태 관리
+let gameState = {
+  level: 1,
+  enemies: [],
+  souls: 0,
+  transformed: false,
+  mouseX: 0,
+  mouseY: 0,
+  cooldowns: {
+    Q: false,
+    W: false,
+    E: false,
+    R: false
+  },
+  eCharges: 2,
+  stats: {
+    hp: 580,
+    ad: 55,
+    def: 25,
+    amp: 100
+  },
+  noCooldown: false  // 쿨타임 무시 토글 상태
+};
+
+// 레벨별 스탯 계산
+const statsByLevel = {
+  hp: (level) => 580 + (level - 1) * 85,
+  ad: (level) => 55 + (level - 1) * 3.2,
+  def: (level) => 25 + (level - 1) * 3,
+  amp: (level) => 100 + (level - 1) * 5
+};
+
+// 스킬 데미지 계산
+const skillDamage = {
+  Q: (level) => [60, 100, 140, 180, 220][Math.min(Math.floor((level - 1) / 3), 4)],
+  W: (level) => [70, 110, 150, 190, 230][Math.min(Math.floor((level - 1) / 3), 4)],
+  E: (level) => [50, 80, 110, 140, 170][Math.min(Math.floor((level - 1) / 3), 4)],
+  R: (level) => [100, 150, 200][Math.min(Math.floor((level - 6) / 5), 2)]
+};
+
+// 스킬 쿨다운 계산
+const skillCooldown = {
+  Q: (level) => [7, 6.5, 6, 5.5, 5][Math.min(Math.floor((level - 1) / 3), 4)],
+  W: (level) => [12, 11, 10, 9, 8][Math.min(Math.floor((level - 1) / 3), 4)],
+  E: (level) => [14, 13, 12, 11, 10][Math.min(Math.floor((level - 1) / 3), 4)],
+  R: (level) => level < 6 ? 999 : [90, 75, 60][Math.min(Math.floor((level - 6) / 5), 2)]
+};
+
+// 레벨 슬라이더 이벤트
+document.getElementById('levelSlider').addEventListener('input', (e) => {
+  gameState.level = parseInt(e.target.value);
+  document.getElementById('levelDisplay').textContent = gameState.level;
+  updateStats();
+  updateSkillInfo();
+});
+
+// 스탯 업데이트
+function updateStats() {
+  const level = gameState.level;
+  gameState.stats.hp = Math.floor(statsByLevel.hp(level));
+  gameState.stats.ad = Math.floor(statsByLevel.ad(level));
+  gameState.stats.def = Math.floor(statsByLevel.def(level));
+  gameState.stats.amp = Math.floor(statsByLevel.amp(level));
+  
+  document.getElementById('hpStat').textContent = gameState.stats.hp;
+  document.getElementById('adStat').textContent = gameState.stats.ad;
+  document.getElementById('defStat').textContent = gameState.stats.def;
+  document.getElementById('ampStat').textContent = gameState.stats.amp;
+}
+
+// 스킬 정보 업데이트
+function updateSkillInfo() {
+  const level = gameState.level;
+  
+  // Q 스킬
+  const qDmg = skillDamage.Q(level) + Math.floor(gameState.stats.amp * 0.6);
+  document.getElementById('qDamage').textContent = qDmg;
+  document.getElementById('qCooldown').textContent = skillCooldown.Q(level) + '초';
+  
+  // W 스킬
+  const wDmg = skillDamage.W(level) + Math.floor(gameState.stats.amp * 0.7);
+  document.getElementById('wDamage').textContent = wDmg;
+  document.getElementById('wCooldown').textContent = skillCooldown.W(level) + '초';
+  
+  // E 스킬
+  const eDmg = skillDamage.E(level) + Math.floor(gameState.stats.amp * 0.5);
+  document.getElementById('eDamage').textContent = eDmg;
+  document.getElementById('eCooldown').textContent = skillCooldown.E(level) + '초';
+  
+  // R 스킬
+  if (level >= 6) {
+    const rDmg = skillDamage.R(level) + Math.floor(gameState.stats.amp * 0.5);
+    document.getElementById('rDamage').textContent = rDmg;
+    document.getElementById('rDuration').textContent = [15, 18, 21][Math.min(Math.floor((level - 6) / 5), 2)] + '초';
+    document.getElementById('rCooldown').textContent = skillCooldown.R(level) + '초';
+    document.getElementById('skillR').disabled = false;
+  } else {
+    document.getElementById('skillR').disabled = true;
+  }
+}
+
+// 마우스 위치 추적
+document.getElementById('gridContainer').addEventListener('mousemove', (e) => {
+  const rect = e.currentTarget.getBoundingClientRect();
+  gameState.mouseX = e.clientX - rect.left;
+  gameState.mouseY = e.clientY - rect.top;
+});
+
+// 적 생성 및 플레이어 이동
+document.getElementById('gridContainer').addEventListener('click', (e) => {
+  // 좌클릭 - 적 생성
+  if (e.button === 0) {
+    if (e.target.classList.contains('enemy')) {
+      // 적 클릭 시 제거
+      removeEnemy(e.target);
+    } else if (gameState.enemies.length < 5) {
+      // 새 적 생성
+      const rect = e.currentTarget.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      createEnemy(x, y);
+    }
+  }
+});
+
+// 우클릭 - 플레이어 이동
+document.getElementById('gridContainer').addEventListener('contextmenu', (e) => {
+  e.preventDefault();
+  
+  // 영혼 오브 클릭 체크
+  if (e.target.classList.contains('soul-orb')) {
+    return; // 영혼 오브 우클릭 처리는 별도로 진행
+  }
+  
+  // 빈 공간 우클릭 시 플레이어 이동
+  if (!e.target.classList.contains('enemy') && !e.target.classList.contains('soul-orb')) {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const targetX = e.clientX - rect.left;
+    const targetY = e.clientY - rect.top;
+    
+    // 플레이어 이동
+    const player = document.getElementById('player');
+    
+    // 이동 애니메이션을 위한 트랜지션 추가
+    player.style.transition = 'left 0.3s ease-out, top 0.3s ease-out';
+    player.style.left = targetX + 'px';
+    player.style.top = targetY + 'px';
+    
+    // 이동 이펙트 표시
+    const moveEffect = document.createElement('div');
+    moveEffect.style.position = 'absolute';
+    moveEffect.style.left = targetX + 'px';
+    moveEffect.style.top = targetY + 'px';
+    moveEffect.style.width = '20px';
+    moveEffect.style.height = '20px';
+    moveEffect.style.border = '2px solid #4CAF50';
+    moveEffect.style.borderRadius = '50%';
+    moveEffect.style.transform = 'translate(-50%, -50%)';
+    moveEffect.style.animation = 'expandFade 0.5s forwards';
+    moveEffect.style.pointerEvents = 'none';
+    moveEffect.style.zIndex = '4';
+    document.getElementById('gridContainer').appendChild(moveEffect);
+    
+    setTimeout(() => moveEffect.remove(), 500);
+    
+    // 트랜지션 제거
+    setTimeout(() => {
+      player.style.transition = '';
+    }, 300);
+  }
+});
+
+// 적 생성 함수
+function createEnemy(x, y) {
+  const enemy = document.createElement('div');
+  enemy.className = 'enemy';
+  enemy.style.left = x + 'px';
+  enemy.style.top = y + 'px';
+  enemy.dataset.hp = 100;
+  enemy.dataset.marked = false;
+  
+  // 우클릭 이벤트 리스너 추가 (영혼 수집용)
+  enemy.addEventListener('contextmenu', (e) => {
+    e.preventDefault();
+    // 영혼 오브가 있는지 확인
+    const soulOrb = document.querySelector(`.soul-orb[data-enemy="${enemy.dataset.id}"]`);
+    if (soulOrb) {
+      collectSoulOrb(soulOrb);
+    }
+  });
+  
+  // 고유 ID 부여
+  enemy.dataset.id = Date.now() + Math.random();
+  
+  document.getElementById('gridContainer').appendChild(enemy);
+  gameState.enemies.push(enemy);
+}
+
+// 적 제거 함수
+function removeEnemy(enemy) {
+  const index = gameState.enemies.indexOf(enemy);
+  if (index > -1) {
+    gameState.enemies.splice(index, 1);
+  }
+  enemy.remove();
+}
+
+// 스킬 사용
+function useSkill(skill) {
+  if (gameState.cooldowns[skill]) return;
+  if (skill === 'R' && gameState.level < 6) return;
+  
+  switch(skill) {
+    case 'Q':
+      useSkillQ();
+      break;
+    case 'W':
+      useSkillW();
+      break;
+    case 'E':
+      useSkillE();
+      break;
+    case 'R':
+      useSkillR();
+      break;
+  }
+}
+
+// Q 스킬 - 마크 오브 페이트
+function useSkillQ() {
+  const player = document.getElementById('player');
+  const container = document.getElementById('gridContainer');
+  
+  // 플레이어의 현재 위치 (중심점)
+  const playerStyle = window.getComputedStyle(player);
+  const playerX = parseFloat(playerStyle.left);
+  const playerY = parseFloat(playerStyle.top);
+  
+  // 마우스와의 각도 계산
+  const angle = Math.atan2(gameState.mouseY - playerY, gameState.mouseX - playerX);
+  
+  // 투사체 생성
+  const projectile = document.createElement('div');
+  projectile.className = 'skill-effect projectile';
+  projectile.style.left = playerX + 'px';
+  projectile.style.top = playerY + 'px';
+  projectile.style.transform = `translate(-12.5px, -17.5px) rotate(${angle}rad)`; // 투사체를 각도에 맞게 회전
+  container.appendChild(projectile);
+  
+  // 발사 효과
+  const launchEffect = document.createElement('div');
+  launchEffect.className = 'skill-effect';
+  launchEffect.style.position = 'absolute';
+  launchEffect.style.left = playerX + 'px';
+  launchEffect.style.top = playerY + 'px';
+  launchEffect.style.width = '30px';
+  launchEffect.style.height = '30px';
+  launchEffect.style.background = 'radial-gradient(circle, rgba(255,215,0,0.6), transparent)';
+  launchEffect.style.borderRadius = '50%';
+  launchEffect.style.transform = 'translate(-15px, -15px)';
+  launchEffect.style.animation = 'fadeOut 0.3s forwards';
+  container.appendChild(launchEffect);
+  setTimeout(() => launchEffect.remove(), 300);
+  
+  // 투사체 이동
+  const speed = 15; // 속도
+  const maxDistance = 650;
+  let currentX = playerX;
+  let currentY = playerY;
+  
+  const moveProjectile = setInterval(() => {
+    // 이동 거리 계산
+    currentX += Math.cos(angle) * speed;
+    currentY += Math.sin(angle) * speed;
+    
+    // 투사체 위치 업데이트
+    projectile.style.left = currentX + 'px';
+    projectile.style.top = currentY + 'px';
+    
+    // 적 충돌 체크
+    for (let enemy of gameState.enemies) {
+      if (enemy.classList.contains('dead')) continue;
+      
+      const enemyX = parseFloat(enemy.style.left);
+      const enemyY = parseFloat(enemy.style.top);
+      
+      // 충돌 검사 (거리 기반)
+      const distance = Math.sqrt(Math.pow(currentX - enemyX, 2) + Math.pow(currentY - enemyY, 2));
+      
+      if (distance < 30) { // 충돌 범위
+        // 적중
+        enemy.classList.add('marked');
+        enemy.dataset.marked = 'true';
+        setTimeout(() => {
+          if (enemy.dataset.marked === 'true') {
+            enemy.classList.remove('marked');
+            enemy.dataset.marked = 'false';
+          }
+        }, 3000);
+        
+        clearInterval(moveProjectile);
+        projectile.remove();
+        
+        // 데미지 표시
+        showDamage(enemy, skillDamage.Q(gameState.level));
+        return;
+      }
+    }
+    
+    // 이동 거리 체크
+    const travelDistance = Math.sqrt(Math.pow(currentX - playerX, 2) + Math.pow(currentY - playerY, 2));
+    
+    // 화면 밖으로 나가거나 최대 거리 도달
+    if (travelDistance >= maxDistance || currentX < 0 || currentX > container.clientWidth || 
+        currentY < 0 || currentY > container.clientHeight) {
+      clearInterval(moveProjectile);
+      projectile.remove();
+    }
+  }, 16);
+  
+  // 쿨다운
+  applyCooldown('Q', skillCooldown.Q(gameState.level));
+  
+  // 스킬 정보 표시
+  showSkillInfo('Q');
+}
+
+// W 스킬 - 소울 바인드
+function useSkillW() {
+  const container = document.getElementById('gridContainer');
+  
+  // 범위 표시
+  const indicator = document.createElement('div');
+  indicator.className = 'skill-effect aoe-indicator';
+  indicator.style.width = '300px';
+  indicator.style.height = '300px';
+  indicator.style.left = gameState.mouseX + 'px';
+  indicator.style.top = gameState.mouseY + 'px';
+  container.appendChild(indicator);
+  
+  // 0.5초 후 폭발
+  setTimeout(() => {
+    indicator.remove();
+    
+    // 폭발 이펙트
+    const explosion = document.createElement('div');
+    explosion.className = 'skill-effect aoe-explosion';
+    explosion.style.width = '300px';
+    explosion.style.height = '300px';
+    explosion.style.left = gameState.mouseX + 'px';
+    explosion.style.top = gameState.mouseY + 'px';
+    container.appendChild(explosion);
+    
+    // 범위 내 적 체크
+    gameState.enemies.forEach(enemy => {
+      if (enemy.classList.contains('dead')) return;
+      
+      const rect = enemy.getBoundingClientRect();
+      const containerRect = container.getBoundingClientRect();
+      const enemyX = rect.left - containerRect.left + rect.width / 2;
+      const enemyY = rect.top - containerRect.top + rect.height / 2;
+      
+      const distance = Math.sqrt(Math.pow(enemyX - gameState.mouseX, 2) + Math.pow(enemyY - gameState.mouseY, 2));
+      
+      if (distance <= 150) {
+        // 기존 상태 효과 제거
+        const existingEffect = enemy.querySelector('.status-effect');
+        if (existingEffect) existingEffect.remove();
+        
+        if (enemy.dataset.marked === 'true') {
+          // 기절 효과
+          enemy.classList.add('stunned');
+          
+          // 스턴 효과 표시 추가
+          const stunEffect = document.createElement('div');
+          stunEffect.className = 'status-effect stun';
+          stunEffect.textContent = 'STUN';
+          enemy.appendChild(stunEffect);
+          
+          setTimeout(() => {
+            enemy.classList.remove('stunned');
+            if (stunEffect.parentNode) stunEffect.remove();
+          }, 1000);
+          
+          enemy.classList.remove('marked');
+          enemy.dataset.marked = 'false';
+        } else {
+          // 슬로우 효과
+          enemy.classList.add('slowed');
+          
+          // 슬로우 효과 표시 추가
+          const slowEffect = document.createElement('div');
+          slowEffect.className = 'status-effect slow';
+          slowEffect.textContent = 'SLOW';
+          enemy.appendChild(slowEffect);
+          
+          setTimeout(() => {
+            enemy.classList.remove('slowed');
+            if (slowEffect.parentNode) slowEffect.remove();
+          }, 2000);
+        }
+        
+        // 데미지 표시
+        showDamage(enemy, skillDamage.W(gameState.level));
+      }
+    });
+    
+    setTimeout(() => explosion.remove(), 600);
+  }, 500);
+  
+  // 쿨다운
+  applyCooldown('W', skillCooldown.W(gameState.level));
+  
+  // 스킬 정보 표시
+  showSkillInfo('W');
+}
+
+// E 스킬 - 페이드 스텝
+function useSkillE() {
+  if (gameState.eCharges <= 0) return;
+  
+  const player = document.getElementById('player');
+  const container = document.getElementById('gridContainer');
+  
+  // 플레이어의 현재 위치 (중심점)
+  const playerStyle = window.getComputedStyle(player);
+  const playerX = parseFloat(playerStyle.left);
+  const playerY = parseFloat(playerStyle.top);
+  
+  const angle = Math.atan2(gameState.mouseY - playerY, gameState.mouseX - playerX);
+  
+  // 대시 궤적
+  const trail = document.createElement('div');
+  trail.className = 'skill-effect dash-trail';
+  trail.style.left = playerX + 'px';
+  trail.style.top = playerY + 'px';
+  trail.style.width = '400px';
+  trail.style.transform = `rotate(${angle}rad)`;
+  trail.style.transformOrigin = 'left center';
+  container.appendChild(trail);
+  
+  // 카드 트랩 설치
+  for (let i = 1; i <= 3; i++) {
+    const card = document.createElement('div');
+    card.className = 'skill-effect card-trap';
+    const cardX = playerX + Math.cos(angle) * (i * 130);
+    const cardY = playerY + Math.sin(angle) * (i * 130);
+    card.style.left = cardX + 'px';
+    card.style.top = cardY + 'px';
+    container.appendChild(card);
+    
+    // 2초 후 제거
+    setTimeout(() => card.remove(), 2000);
+    
+    // 카드 밟기 체크
+    const checkCard = setInterval(() => {
+      gameState.enemies.forEach(enemy => {
+        if (enemy.classList.contains('dead')) return;
+        
+        const rect = enemy.getBoundingClientRect();
+        const cardRect = card.getBoundingClientRect();
+        
+        if (cardRect.left < rect.right && cardRect.right > rect.left &&
+            cardRect.top < rect.bottom && cardRect.bottom > rect.top) {
+          enemy.classList.add('marked');
+          enemy.dataset.marked = 'true';
+          setTimeout(() => {
+            enemy.classList.remove('marked');
+            enemy.dataset.marked = 'false';
+          }, 3000);
+          
+          showDamage(enemy, skillDamage.E(gameState.level));
+          card.remove();
+          clearInterval(checkCard);
+        }
+      });
+    }, 100);
+    
+    setTimeout(() => clearInterval(checkCard), 2000);
+  }
+  
+  // 플레이어 이동
+  const newX = Math.min(Math.max(playerX + Math.cos(angle) * 400, 20), container.clientWidth - 20);
+  const newY = Math.min(Math.max(playerY + Math.sin(angle) * 400, 20), container.clientHeight - 20);
+  player.style.left = newX + 'px';
+  player.style.top = newY + 'px';
+  
+  setTimeout(() => trail.remove(), 500);
+  
+  // 충전 관리
+  gameState.eCharges--;
+  if (gameState.eCharges === 0 && !gameState.noCooldown) {
+    applyCooldown('E', skillCooldown.E(gameState.level));
+    setTimeout(() => {
+      gameState.eCharges = 2;
+    }, skillCooldown.E(gameState.level) * 1000);
+  } else if (gameState.noCooldown) {
+    // 쿨타임 무시 모드에서는 충전 즉시 회복
+    gameState.eCharges = 2;
+  }
+  
+  // 스킬 정보 표시
+  showSkillInfo('E');
+}
+
+// R 스킬 - 아스펙트 시프트
+function useSkillR() {
+  if (gameState.souls <= 0) {
+    alert('변신하려면 영혼이 필요합니다! 죽은 적 근처에서 우클릭으로 영혼을 수집하세요.');
+    return;
+  }
+  
+  const player = document.getElementById('player');
+  const container = document.getElementById('gridContainer');
+  
+  // 플레이어의 현재 위치 (중심점)
+  const playerStyle = window.getComputedStyle(player);
+  const playerX = parseFloat(playerStyle.left);
+  const playerY = parseFloat(playerStyle.top);
+  
+  // 변신 이펙트
+  const transform = document.createElement('div');
+  transform.className = 'skill-effect transform-effect';
+  transform.style.width = '400px';
+  transform.style.height = '400px';
+  transform.style.left = playerX + 'px';
+  transform.style.top = playerY + 'px';
+  container.appendChild(transform);
+  
+  // 범위 내 적 피해
+  gameState.enemies.forEach(enemy => {
+    if (enemy.classList.contains('dead')) return;
+    
+    const enemyX = parseFloat(enemy.style.left);
+    const enemyY = parseFloat(enemy.style.top);
+    
+    const distance = Math.sqrt(Math.pow(enemyX - playerX, 2) + Math.pow(enemyY - playerY, 2));
+    
+    if (distance <= 200) {
+      showDamage(enemy, skillDamage.R(gameState.level));
+    }
+  });
+  
+  // 변신 상태
+  gameState.transformed = true;
+  player.style.background = 'radial-gradient(circle, #9C27B0, #7B1FA2)';
+  player.style.boxShadow = '0 0 30px rgba(156, 39, 176, 0.8)';
+  
+  // 영혼 소비
+  gameState.souls--;
+  updateSoulSlot();
+  
+  const duration = [15, 18, 21][Math.min(Math.floor((gameState.level - 6) / 5), 2)];
+  
+  setTimeout(() => {
+    gameState.transformed = false;
+    player.style.background = 'radial-gradient(circle, #4CAF50, #2E7D32)';
+    player.style.boxShadow = '0 0 20px rgba(76, 175, 80, 0.5)';
+  }, duration * 1000);
+  
+  setTimeout(() => transform.remove(), 1000);
+  
+  // 쿨다운
+  applyCooldown('R', skillCooldown.R(gameState.level));
+  
+  // 스킬 정보 표시
+  showSkillInfo('R');
+}
+
+// 데미지 표시
+function showDamage(enemy, damage) {
+  const actualDamage = damage + Math.floor(gameState.stats.amp * 0.5);
+  
+  const dmgText = document.createElement('div');
+  dmgText.style.position = 'absolute';
+  dmgText.style.left = enemy.style.left;
+  dmgText.style.top = (parseInt(enemy.style.top) - 30) + 'px';
+  dmgText.style.color = '#FFD700';
+  dmgText.style.fontWeight = '700';
+  dmgText.style.fontSize = '20px';
+  dmgText.style.textShadow = '0 0 4px rgba(0,0,0,0.8)';
+  dmgText.style.animation = 'fadeUp 1s forwards';
+  dmgText.style.zIndex = '20';
+  dmgText.textContent = actualDamage;
+  
+  document.getElementById('gridContainer').appendChild(dmgText);
+  setTimeout(() => dmgText.remove(), 1000);
+  
+  // HP 감소
+  enemy.dataset.hp = Math.max(0, parseInt(enemy.dataset.hp) - actualDamage / 10);
+  
+  if (enemy.dataset.hp <= 0 && !enemy.classList.contains('dead')) {
+    enemy.classList.add('dead');
+    
+    // 영혼 오브 생성
+    createSoulOrb(enemy);
+  }
+}
+
+// 영혼 오브 생성
+function createSoulOrb(enemy) {
+  const container = document.getElementById('gridContainer');
+  const soulOrb = document.createElement('div');
+  soulOrb.className = 'soul-orb';
+  soulOrb.style.left = enemy.style.left;
+  soulOrb.style.top = enemy.style.top;
+  soulOrb.dataset.enemy = enemy.dataset.id;
+  
+  // 우클릭으로 영혼 수집
+  soulOrb.addEventListener('contextmenu', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // 플레이어와의 거리 확인
+    const player = document.getElementById('player');
+    const playerStyle = window.getComputedStyle(player);
+    const playerX = parseFloat(playerStyle.left);
+    const playerY = parseFloat(playerStyle.top);
+    
+    const orbX = parseFloat(soulOrb.style.left);
+    const orbY = parseFloat(soulOrb.style.top);
+    
+    const distance = Math.sqrt(Math.pow(orbX - playerX, 2) + Math.pow(orbY - playerY, 2));
+    
+    if (distance <= 100) { // 100 거리 이내에서만 수집 가능
+      collectSoulOrb(soulOrb);
+    } else {
+      // 거리가 멀면 메시지 표시
+      showMessage('영혼을 수집하려면 더 가까이 접근하세요!', orbX, orbY);
+    }
+  });
+  
+  container.appendChild(soulOrb);
+  
+  // 10초 후 영혼 오브 소멸
+  setTimeout(() => {
+    if (soulOrb.parentNode) {
+      soulOrb.style.animation = 'fadeOut 1s forwards';
+      setTimeout(() => soulOrb.remove(), 1000);
+    }
+  }, 10000);
+}
+
+// 영혼 오브 수집
+function collectSoulOrb(soulOrb) {
+  if (gameState.souls < 1) {
+    soulOrb.classList.add('collecting');
+    gameState.souls = 1;
+    updateSoulSlot();
+    
+    // 수집 메시지 표시
+    showMessage('영혼 수집!', parseInt(soulOrb.style.left), parseInt(soulOrb.style.top) - 20);
+    
+    setTimeout(() => soulOrb.remove(), 1000);
+  } else {
+    showMessage('영혼 슬롯이 가득 찼습니다!', parseInt(soulOrb.style.left), parseInt(soulOrb.style.top) - 20);
+  }
+}
+
+// 메시지 표시
+function showMessage(text, x, y) {
+  const msg = document.createElement('div');
+  msg.style.position = 'absolute';
+  msg.style.left = x + 'px';
+  msg.style.top = y + 'px';
+  msg.style.color = '#9C27B0';
+  msg.style.fontWeight = '600';
+  msg.style.fontSize = '14px';
+  msg.style.textShadow = '0 0 4px rgba(0,0,0,0.8)';
+  msg.style.animation = 'fadeUp 1.5s forwards';
+  msg.style.zIndex = '20';
+  msg.style.whiteSpace = 'nowrap';
+  msg.textContent = text;
+  
+  document.getElementById('gridContainer').appendChild(msg);
+  setTimeout(() => msg.remove(), 1500);
+}
+
+// 영혼 슬롯 업데이트
+function updateSoulSlot() {
+  const slot = document.getElementById('soulSlot');
+  
+  if (gameState.souls > 0) {
+    slot.classList.add('filled');
+    slot.innerHTML = '<div class="soul-card"></div>';
+  } else {
+    slot.classList.remove('filled');
+    slot.innerHTML = '';
+  }
+}
+
+// 쿨다운 적용
+function applyCooldown(skill, duration) {
+  // 쿨타임 무시 모드일 경우 즉시 리턴
+  if (gameState.noCooldown) {
+    return;
+  }
+  
+  const button = document.getElementById('skill' + skill);
+  button.classList.add('cooldown');
+  button.style.setProperty('--cooldown', duration + 's');
+  button.disabled = true;
+  gameState.cooldowns[skill] = true;
+  
+  // 쿨다운 텍스트
+  const cdText = document.createElement('div');
+  cdText.className = 'cooldown-text';
+  let remaining = Math.ceil(duration);
+  cdText.textContent = remaining;
+  button.appendChild(cdText);
+  
+  const cdInterval = setInterval(() => {
+    remaining--;
+    if (remaining > 0) {
+      cdText.textContent = remaining;
+    } else {
+      clearInterval(cdInterval);
+      cdText.remove();
+      button.classList.remove('cooldown');
+      button.disabled = false;
+      gameState.cooldowns[skill] = false;
+    }
+  }, 1000);
+}
+
+// 스킬 정보 표시
+function showSkillInfo(skill) {
+  document.querySelectorAll('.skill-info').forEach(info => {
+    info.classList.remove('active');
+  });
+  document.getElementById('info' + skill).classList.add('active');
+}
+
+// 시뮬레이션 리셋
+function resetSimulation() {
+  // 적 제거
+  gameState.enemies.forEach(enemy => enemy.remove());
+  gameState.enemies = [];
+  
+  // 영혼 오브 제거
+  document.querySelectorAll('.soul-orb').forEach(orb => orb.remove());
+  
+  // 영혼 초기화
+  gameState.souls = 0;
+  updateSoulSlot();
+  
+  // 변신 해제
+  gameState.transformed = false;
+  const player = document.getElementById('player');
+  player.style.background = 'radial-gradient(circle, #4CAF50, #2E7D32)';
+  player.style.boxShadow = '0 0 20px rgba(76, 175, 80, 0.5)';
+  player.style.left = '50%';
+  player.style.top = '50%';
+  
+  // 스킬 쿨다운 초기화
+  Object.keys(gameState.cooldowns).forEach(skill => {
+    gameState.cooldowns[skill] = false;
+    const button = document.getElementById('skill' + skill);
+    button.classList.remove('cooldown');
+    button.disabled = false;
+    const cdText = button.querySelector('.cooldown-text');
+    if (cdText) cdText.remove();
+  });
+  
+  gameState.eCharges = 2;
+  
+  // 스킬 이펙트 제거
+  document.querySelectorAll('.skill-effect').forEach(effect => effect.remove());
+}
+
+// 키보드 입력
+document.addEventListener('keydown', (e) => {
+  const key = e.key.toUpperCase();
+  if (['Q', 'W', 'E', 'R'].includes(key)) {
+    e.preventDefault();
+    useSkill(key);
+  }
+});
+
+// 쿨타임 토글 함수
+function toggleCooldownReset() {
+  const toggle = document.getElementById('cooldownToggle');
+  const status = document.getElementById('toggleStatus');
+  
+  gameState.noCooldown = toggle.checked;
+  
+  if (toggle.checked) {
+    status.textContent = 'ON';
+    status.classList.add('active');
+    
+    // 현재 진행 중인 모든 쿨다운 즉시 해제
+    Object.keys(gameState.cooldowns).forEach(skill => {
+      if (gameState.cooldowns[skill]) {
+        const button = document.getElementById('skill' + skill);
+        button.classList.remove('cooldown');
+        button.disabled = false;
+        const cdText = button.querySelector('.cooldown-text');
+        if (cdText) cdText.remove();
+        gameState.cooldowns[skill] = false;
+      }
+    });
+    
+    // E 스킬 충전 즉시 회복
+    gameState.eCharges = 2;
+  } else {
+    status.textContent = 'OFF';
+    status.classList.remove('active');
+  }
+}
+
+// fadeUp 애니메이션 추가
+const style = document.createElement('style');
+style.textContent = `
+  @keyframes fadeUp {
+    0% {
+      opacity: 1;
+      transform: translate(-50%, 0);
+    }
+    100% {
+      opacity: 0;
+      transform: translate(-50%, -30px);
+    }
+  }
+`;
+document.head.appendChild(style);
+
+// 초기화
+updateStats();
+updateSkillInfo();
+showSkillInfo('Q');
+</script>
+</body>
+</html>

@@ -1,0 +1,17 @@
+[
+  {
+    "id": "plan",
+    "name": "기획서",
+    "order": 1
+  },
+  {
+    "id": "game",
+    "name": "게임제작",
+    "order": 2
+  },
+  {
+    "id": "prototype",
+    "name": "프로토타입",
+    "order": 3
+  }
+]
